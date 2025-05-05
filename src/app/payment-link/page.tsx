@@ -6,6 +6,8 @@ import { AgentCard } from '@/components/agents/AgentCard';
 import { PricingToggle } from '@/components/pricing/PricingToggle';
 import { useQuery } from '@tanstack/react-query';
 import { EscrowSection } from '@/components/escrow/EscrowSection';
+import { StatusTimeline, TimelineStatus } from '@/components/timeline/StatusTimeline';
+import { DeliverySection } from '@/components/delivery/DeliverySection';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -22,8 +24,26 @@ const mockPaymentLink = {
   id: '1',
   amount: 10,
   currency: 'SOL',
-  status: 'pending' as const,
+  status: 'Funded' as TimelineStatus,
   escrowAddress: '79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
+};
+
+// Mock timestamps for each status
+const mockTimestamps: Record<TimelineStatus, string> = {
+  Unfunded: '2023-07-01T12:00:00Z',
+  Funded: '2023-07-02T15:30:00Z',
+  'Work Started': '2023-07-03T10:00:00Z',
+  'Work Delivered': '2023-07-04T08:45:00Z',
+  Complete: '2023-07-05T18:15:00Z',
+};
+
+// Mock deliverable data
+const mockDelivery = {
+  deliverableUrl: 'https://example.com/delivery/1',
+  shareOptions: {
+    title: 'Deliverable Link',
+    text: 'View your deliverable here',
+  },
 };
 
 export default function PaymentLinkPage() {
@@ -74,13 +94,19 @@ export default function PaymentLinkPage() {
           {/* Status Timeline */}
           <section className="rounded-lg border p-4">
             <h2 className="text-lg font-semibold">Status Timeline</h2>
-            <p className="text-muted-foreground">Coming soon...</p>
+            <StatusTimeline
+              currentStatus={mockPaymentLink.status}
+              statusTimestamps={mockTimestamps}
+            />
           </section>
 
           {/* Delivery Section */}
           <section className="rounded-lg border p-4">
             <h2 className="text-lg font-semibold">Delivery</h2>
-            <p className="text-muted-foreground">Coming soon...</p>
+            <DeliverySection
+              deliverableUrl={mockDelivery.deliverableUrl}
+              shareOptions={mockDelivery.shareOptions}
+            />
           </section>
         </div>
       </main>
