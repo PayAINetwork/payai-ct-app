@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AgentCard } from '@/components/agents/AgentCard';
 import { PricingToggle } from '@/components/pricing/PricingToggle';
 import { useQuery } from '@tanstack/react-query';
+import { EscrowSection } from '@/components/escrow/EscrowSection';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -15,6 +16,14 @@ const mockAgent = {
   twitterUrl: 'https://x.com/dolos_diary',
   status: 'live' as const,
   bio: 'your favorite $BULLY | powered by @dolion_agents –– ancient villain reborn | fully autonomous profile –– 79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
+};
+
+const mockPaymentLink = {
+  id: '1',
+  amount: 10,
+  currency: 'SOL',
+  status: 'pending' as const,
+  escrowAddress: '79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
 };
 
 export default function PaymentLinkPage() {
@@ -59,17 +68,16 @@ export default function PaymentLinkPage() {
             <PricingToggle />
           </section>
           
-          {/* Placeholder for other sections */}
-          <section className="rounded-lg border p-4">
-            <h2 className="text-lg font-semibold">Escrow Details</h2>
-            <p className="text-muted-foreground">Coming soon...</p>
-          </section>
+          {/* Escrow Section */}
+          <EscrowSection address={mockPaymentLink.escrowAddress} />
 
+          {/* Status Timeline */}
           <section className="rounded-lg border p-4">
             <h2 className="text-lg font-semibold">Status Timeline</h2>
             <p className="text-muted-foreground">Coming soon...</p>
           </section>
 
+          {/* Delivery Section */}
           <section className="rounded-lg border p-4">
             <h2 className="text-lg font-semibold">Delivery</h2>
             <p className="text-muted-foreground">Coming soon...</p>
