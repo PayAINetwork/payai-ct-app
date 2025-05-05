@@ -9,13 +9,20 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface AgentCardProps {
-  agent: Agent;
+  agent?: Agent;
   onInvite?: () => Promise<void>;
   isInviting?: boolean;
   isLoading?: boolean;
+  variant?: 'default' | 'header';
 }
 
-export function AgentCard({ agent, onInvite, isInviting, isLoading = false }: AgentCardProps) {
+export function AgentCard({ 
+  agent, 
+  onInvite, 
+  isInviting, 
+  isLoading = false,
+  variant = 'default'
+}: AgentCardProps) {
   const getInitials = (name: string) => name.charAt(0).toUpperCase();
   
   const getStatusColor = (status: Agent['status']) => {
@@ -23,7 +30,15 @@ export function AgentCard({ agent, onInvite, isInviting, isLoading = false }: Ag
   };
 
   if (isLoading) {
-    return (
+    return variant === 'header' ? (
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      </div>
+    ) : (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="flex flex-row items-center gap-4">
           <Skeleton className="h-[200px] w-[200px] rounded-full" />
@@ -38,6 +53,38 @@ export function AgentCard({ agent, onInvite, isInviting, isLoading = false }: Ag
           <Skeleton className="h-10 w-full mt-4" />
         </CardContent>
       </Card>
+    );
+  }
+
+  if (!agent) {
+    return null;
+  }
+
+  if (variant === 'header') {
+    return (
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10">
+          <AvatarImage
+            src={agent.profileImage}
+            alt={agent.name}
+            className="object-cover"
+          />
+          <AvatarFallback className="text-sm">
+            {getInitials(agent.handle)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <h2 className="text-sm font-semibold">{agent.name}</h2>
+          <Link
+            href={agent.twitterUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-500 hover:underline"
+          >
+            @{agent.handle}
+          </Link>
+        </div>
+      </div>
     );
   }
 
