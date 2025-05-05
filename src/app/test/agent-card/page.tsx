@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AgentCard } from '@/components/agents/AgentCard';
 import { Agent } from '@/types/agent';
 
@@ -16,6 +16,16 @@ const testAgent: Agent = {
 
 export default function TestAgentCard() {
   const [isInviting, setIsInviting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading data from backend
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleInvite = async () => {
     setIsInviting(true);
@@ -31,6 +41,7 @@ export default function TestAgentCard() {
         agent={testAgent}
         onInvite={handleInvite}
         isInviting={isInviting}
+        isLoading={isLoading}
       />
     </div>
   );

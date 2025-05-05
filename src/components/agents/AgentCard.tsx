@@ -6,19 +6,40 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Agent } from '@/types/agent';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AgentCardProps {
   agent: Agent;
   onInvite?: () => Promise<void>;
   isInviting?: boolean;
+  isLoading?: boolean;
 }
 
-export function AgentCard({ agent, onInvite, isInviting }: AgentCardProps) {
+export function AgentCard({ agent, onInvite, isInviting, isLoading = false }: AgentCardProps) {
   const getInitials = (name: string) => name.charAt(0).toUpperCase();
   
   const getStatusColor = (status: Agent['status']) => {
-    return status === 'live' ? 'bg-green-500' : 'bg-blue-500';
+    return status === 'live' ? 'bg-green-500' : 'bg-gray-500';
   };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="flex flex-row items-center gap-4">
+          <Skeleton className="h-[200px] w-[200px] rounded-full" />
+          <div className="flex flex-col gap-2 flex-1">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-6 w-28" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-10 w-full mt-4" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -51,12 +72,12 @@ export function AgentCard({ agent, onInvite, isInviting }: AgentCardProps) {
               getStatusColor(agent.status)
             )}
           >
-            {agent.status === 'live' ? 'Live' : 'Invite to PayAI'}
+            {agent.status === 'live' ? 'Live' : 'Needs Onboarding'}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-gray-600 line-clamp-3 hover:line-clamp-none transition-all">
+        <p className="text-gray-600 break-words whitespace-pre-wrap">
           {agent.bio}
         </p>
         {agent.status === 'invite' && (
