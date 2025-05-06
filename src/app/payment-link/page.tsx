@@ -12,9 +12,10 @@ import { DeliverySection } from '@/components/delivery/DeliverySection';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
-import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createTransferCheckedInstruction } from '@solana/spl-token';
+import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createTransferCheckedInstruction, getMint } from '@solana/spl-token';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { X } from 'lucide-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -65,12 +66,16 @@ export default function PaymentLinkPage() {
   // Wallet and balance state
   const { connection } = useConnection();
   const { publicKey, connected, sendTransaction } = useWallet();
+  const { setVisible } = useWalletModal();
   const [solBalance, setSolBalance] = useState<number | null>(null);
   // PAYAI token mint and balance state
   const PAYAI_MINT_ADDRESS = 'E7NgL19JbN8BhUDgWjkH8MtnbhJoaGaWJqosxZZepump';
   const payaiMint = new PublicKey(PAYAI_MINT_ADDRESS);
   const [payaiBalance, setPayaiBalance] = useState<number | null>(null);
   const [payaiDecimals, setPayaiDecimals] = useState<number | null>(null);
+
+  // Track pending payment for seamless connect then pay flow
+  const [pendingPayment, setPendingPayment] = useState(false);
 
   useEffect(() => {
     if (connected && publicKey) {
@@ -105,6 +110,18 @@ export default function PaymentLinkPage() {
     }
   }, [connection, publicKey, connected]);
 
+  // Auto-trigger payment once wallet connected after initial click
+  useEffect(() => {
+    if (connected && pendingPayment) {
+      // Close the wallet modal if open
+      setVisible(false);
+      // Proceed with payment
+      handlePayment();
+      // Reset pending state
+      setPendingPayment(false);
+    }
+  }, [connected, pendingPayment]);
+
   // Transaction submission state and handler
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Transaction status states
@@ -119,6 +136,16 @@ export default function PaymentLinkPage() {
     setTxError(null);
   };
 
+  // Wrapper click handler: prompt connect if not connected
+  const handlePayClick = () => {
+    if (!connected) {
+      setPendingPayment(true);
+      setVisible(true);
+    } else {
+      handlePayment();
+    }
+  };
+
   const handlePayment = async () => {
     if (!connected || !publicKey) return;
     // Reset transaction states
@@ -129,7 +156,9 @@ export default function PaymentLinkPage() {
     try {
       let tx;
       if (mockPaymentLink.currency === 'PAYAI') {
-        if (!payaiDecimals) throw new Error('Token decimals unknown');
+        // Fetch token mint to determine decimals
+        const mintInfo = await getMint(connection, payaiMint);
+        const decimals = mintInfo.decimals;
         const userTokenAccount = await getAssociatedTokenAddress(payaiMint, publicKey);
         const escrowPubkey = new PublicKey(mockPaymentLink.escrowAddress);
         const escrowTokenAccount = await getAssociatedTokenAddress(payaiMint, escrowPubkey);
@@ -138,21 +167,22 @@ export default function PaymentLinkPage() {
         const instructions = [];
         if (!escrowAccountInfo) {
           const createATAIx = createAssociatedTokenAccountInstruction(
-            publicKey, // payer
+            publicKey,
             escrowTokenAccount,
             escrowPubkey,
             payaiMint
           );
           instructions.push(createATAIx);
         }
-        const rawAmount = Math.round(mockPaymentLink.amount * Math.pow(10, payaiDecimals));
+        // Calculate raw transfer amount
+        const rawAmount = Math.round(mockPaymentLink.amount * Math.pow(10, decimals));
         const transferIx = createTransferCheckedInstruction(
           userTokenAccount,
           payaiMint,
           escrowTokenAccount,
           publicKey,
           rawAmount,
-          payaiDecimals
+          decimals
         );
         instructions.push(transferIx);
         tx = new Transaction().add(...instructions);
@@ -225,8 +255,8 @@ export default function PaymentLinkPage() {
           <div className="mt-4 flex justify-center">
             <Button
               size="lg"
-              onClick={handlePayment}
-              disabled={!connected || isSubmitting}
+              onClick={handlePayClick}
+              disabled={isSubmitting}
             >
               {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
             </Button>
