@@ -16,6 +16,7 @@ import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, cre
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { X } from 'lucide-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import AccordionSection, { SectionItem } from '@/components/AccordionSection';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -209,6 +210,59 @@ export default function PaymentLinkPage() {
     }
   };
 
+  // Action handlers for accordion
+  const handleNotifyAgent = () => console.log('Notify Agent clicked');
+  const handleMarkStarted = () => console.log('Mark as Started clicked');
+  const handleConfirmDelivery = () => console.log('Confirm Delivery clicked');
+
+  // Accordion sections configuration
+  const sections: SectionItem[] = [
+    {
+      key: 'Order Description',
+      title: 'Order Details',
+      summary: <>{agent?.name} - {agent?.handle}</>,
+      detail: <p>Full order description goes here.</p>
+    },
+    {
+      key: 'Unfunded',
+      title: 'Payment',
+      summary: `${mockPaymentLink.amount} ${mockPaymentLink.currency} - ${mockPaymentLink.status}`,
+      detail: (
+        <Button size="lg" onClick={handlePayClick} disabled={isSubmitting}>
+          {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
+        </Button>
+      )
+    },
+    {
+      key: 'Funded',
+      title: 'Awaiting Agent',
+      summary: <>{agent?.name} - {agent?.status}</>,
+      detail: <Button onClick={handleNotifyAgent}>Notify Agent</Button>
+    },
+    {
+      key: 'Work Started',
+      title: 'Job In Progress',
+      summary: mockTimestamps['Work Started'],
+      detail: <Button onClick={handleMarkStarted}>Mark as Started</Button>
+    },
+    {
+      key: 'Work Delivered',
+      title: 'Work Delivered',
+      summary: (
+        <a href={mockDelivery.deliverableUrl} target="_blank" rel="noopener noreferrer" className="underline">
+          {mockDelivery.deliverableUrl.length > 20 ? mockDelivery.deliverableUrl.slice(0, 20) + '...' : mockDelivery.deliverableUrl}
+        </a>
+      ),
+      detail: <Button onClick={handleConfirmDelivery}>Confirm Delivery</Button>
+    },
+    {
+      key: 'Complete',
+      title: 'Job Complete',
+      summary: mockTimestamps['Complete'],
+      detail: <p>Thank you! The job is complete.</p>
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky Header */}
@@ -248,20 +302,14 @@ export default function PaymentLinkPage() {
           <section>
             <PricingToggle />
           </section>
-          
           {/* Escrow Section */}
           <EscrowSection address={mockPaymentLink.escrowAddress} />
           {/* Pay With Wallet Button under QR Code */}
           <div className="mt-4 flex justify-center">
-            <Button
-              size="lg"
-              onClick={handlePayClick}
-              disabled={isSubmitting}
-            >
+            <Button size="lg" onClick={handlePayClick} disabled={isSubmitting}>
               {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
             </Button>
           </div>
-
           {/* Transaction Feedback Alerts */}
           {txStatus === 'processing' && (
             <Alert className="mt-4 relative">
@@ -300,7 +348,6 @@ export default function PaymentLinkPage() {
               <AlertDescription>Transaction failed: {txError}</AlertDescription>
             </Alert>
           )}
-
           {/* Status Timeline */}
           <section className="rounded-lg border p-4">
             <h2 className="text-lg font-semibold">Status Timeline</h2>
@@ -309,7 +356,6 @@ export default function PaymentLinkPage() {
               statusTimestamps={mockTimestamps}
             />
           </section>
-
           {/* Delivery Section */}
           <section className="rounded-lg border p-4">
             <h2 className="text-lg font-semibold">Delivery</h2>
@@ -318,6 +364,10 @@ export default function PaymentLinkPage() {
               shareOptions={mockDelivery.shareOptions}
             />
           </section>
+        </div>
+        {/* Accordion at bottom */}
+        <div className="mx-auto max-w-3xl mt-8">
+          <AccordionSection sections={sections} currentState={mockPaymentLink.status} />
         </div>
       </main>
     </div>
