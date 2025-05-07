@@ -5,9 +5,9 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { AgentCard } from '@/components/agents/AgentCard';
-import { PricingToggle } from '@/components/pricing/PricingToggle';
+import { PricingToggle } from '@/components/payment/PricingToggle';
 import { useQuery } from '@tanstack/react-query';
-import { EscrowSection } from '@/components/escrow/EscrowSection';
+import { EscrowSection } from '@/components/payment/PaymentDetails';
 import { StatusTimeline, TimelineStatus } from '@/components/timeline/StatusTimeline';
 import { DeliverySection } from '@/components/delivery/DeliverySection';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
@@ -20,6 +20,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import AccordionSection, { SectionItem } from '@/components/AccordionSection';
 import { Header } from '@/components/layout/Header';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Payment } from '@/components/payment/Payment';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -313,14 +314,13 @@ export default function PaymentLinkPage() {
       ),
       detail: (
         <div className="space-y-4">
-          <div className="text-lg font-light">
-            Make payment so that {agent?.name} can get started.
-          </div>
-          <PricingToggle amountSol={mockPaymentLink.amountSol} amountPayai={mockPaymentLink.amountPayai} />
-          <EscrowSection address={mockPaymentLink.escrowAddress} />
-          <Button size="lg" onClick={handlePayClick} disabled={isSubmitting}>
-            {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
-          </Button>
+          <Payment 
+            amountSol={mockPaymentLink.amountSol}
+            amountPayai={mockPaymentLink.amountPayai}
+            escrowAddress={mockPaymentLink.escrowAddress}
+            onPayClick={handlePayClick}
+            isSubmitting={isSubmitting}
+          />
         </div>
       )
     },

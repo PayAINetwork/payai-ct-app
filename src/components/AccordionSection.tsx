@@ -62,15 +62,20 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({ sections, currentSt
     <div className="w-full">
       {sections.map(({ key, title, summary, detail }) => {
         const { content, timestamp } = extractContent(summary);
+        const isOpen = openKey === key;
         return (
           <div key={key} className="border-b">
-            <button
+            <motion.button
               type="button"
               className={`w-full flex flex-col p-4 focus:outline-none ${
-                openKey === key ? 'bg-gradient-to-r from-purple-100 to-blue-100' : 'bg-white'
+                isOpen ? 'bg-gradient-to-r from-purple-100 to-blue-100' : 'bg-white'
               }`}
-              aria-expanded={openKey === key}
+              aria-expanded={isOpen}
               onClick={() => toggle(key)}
+              animate={{
+                scale: isOpen ? 1.1 : 1,
+                transition: { duration: 0.2, ease: "easeInOut" }
+              }}
             >
               <div className="flex items-center gap-2">
                 <span className="font-medium text-lg">{title}</span>
@@ -81,9 +86,9 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({ sections, currentSt
                   {timestamp}
                 </div>
               )}
-            </button>
+            </motion.button>
             <AnimatePresence initial={false}>
-              {openKey === key && (
+              {isOpen && (
                 <motion.div
                   key="content"
                   initial="collapsed"
