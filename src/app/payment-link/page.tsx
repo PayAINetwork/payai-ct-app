@@ -17,6 +17,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { X } from 'lucide-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import AccordionSection, { SectionItem } from '@/components/AccordionSection';
+import { Header } from '@/components/layout/Header';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -324,36 +325,7 @@ export default function PaymentLinkPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => window.history.back()}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Back</span>
-            </Button>
-            <div className="flex-1">
-              <AgentCard 
-                agent={agent} 
-                isLoading={isLoading}
-                variant="header" 
-              />
-            </div>
-            <WalletMultiButton className="h-8" />
-            {connected && solBalance !== null && (
-              <span className="ml-2 text-sm font-medium">{solBalance.toFixed(3)} SOL</span>
-            )}
-            {connected && payaiBalance !== null && (
-              <span className="ml-2 text-sm font-medium">{payaiBalance.toFixed(6)} PAYAI</span>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
       <div className="container mx-auto p-4">
         <AccordionSection sections={sections} currentState={mockPaymentLink.status} />
       </div>
