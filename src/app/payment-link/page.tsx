@@ -35,9 +35,11 @@ const mockAgent = {
 // Temporary mock data with timestamps for each status
 const mockPaymentLink = {
   id: '1',
-  amount: 20000,
-  currency: 'PAYAI',
-  status: 'Funded' as TimelineStatus,
+  userSpecifiedAmount: 20000,
+  userSpecifiedCurrency: 'PAYAI',
+  amountSol: 0.0557,
+  amountPayai: 20000,
+  status: 'Unfunded' as TimelineStatus,
   escrowAddress: '79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
   buyerXName: 'Notorious D.E.V',
   buyerXHandle: 'notorious_d_e_v',
@@ -183,7 +185,7 @@ export default function PaymentLinkPage() {
           instructions.push(createATAIx);
         }
         // Calculate raw transfer amount
-        const rawAmount = Math.round(mockPaymentLink.amount * Math.pow(10, decimals));
+        const rawAmount = Math.round(mockPaymentLink.amountPayai * Math.pow(10, decimals));
         const transferIx = createTransferCheckedInstruction(
           userTokenAccount,
           payaiMint,
@@ -199,7 +201,7 @@ export default function PaymentLinkPage() {
           SystemProgram.transfer({
             fromPubkey: publicKey,
             toPubkey: new PublicKey(mockPaymentLink.escrowAddress),
-            lamports: mockPaymentLink.amount * LAMPORTS_PER_SOL,
+            lamports: mockPaymentLink.amountSol * LAMPORTS_PER_SOL,
           })
         );
       }
@@ -301,7 +303,7 @@ export default function PaymentLinkPage() {
       title: 'Payment',
       summary: (
         <div className="space-y-1">
-          <div>{mockPaymentLink.status} - {mockPaymentLink.amount} {mockPaymentLink.currency}</div>
+          <div>{mockPaymentLink.status === 'Unfunded' ? 'Awaiting Payment' : mockPaymentLink.status} - {mockPaymentLink.userSpecifiedAmount} {mockPaymentLink.userSpecifiedCurrency}</div>
           {mockPaymentLink.status !== 'Unfunded' && (
             <div className="text-xs text-gray-500">
               Funded at {new Date(mockPaymentLink.statusTimestamps.Funded).toLocaleString()}
@@ -311,7 +313,10 @@ export default function PaymentLinkPage() {
       ),
       detail: (
         <div className="space-y-4">
-          <PricingToggle />
+          <div className="text-lg font-light">
+            Make payment so that {agent?.name} can get started.
+          </div>
+          <PricingToggle amountSol={mockPaymentLink.amountSol} amountPayai={mockPaymentLink.amountPayai} />
           <EscrowSection address={mockPaymentLink.escrowAddress} />
           <Button size="lg" onClick={handlePayClick} disabled={isSubmitting}>
             {isSubmitting ? 'Processing...' : 'Pay With Wallet'}

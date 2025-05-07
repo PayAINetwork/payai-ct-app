@@ -18,11 +18,22 @@ interface PriceData {
   };
 }
 
+interface PricingToggleProps {
+  amountSol: number;
+  amountPayai: number;
+  onCurrencyChange?: (currency: Currency) => void;
+}
+
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
 const PAYAI_MINT = 'E7NgL19JbN8BhUDgWjkH8MtnbhJoaGaWJqosxZZepump';
 
-export function PricingToggle() {
+export function PricingToggle({ amountSol, amountPayai, onCurrencyChange }: PricingToggleProps) {
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>('SOL');
+
+  const handleCurrencyChange = (currency: Currency) => {
+    setSelectedCurrency(currency);
+    onCurrencyChange?.(currency);
+  };
 
   const { data: priceData, isLoading, error } = useQuery<PriceData>({
     queryKey: ['prices'],
@@ -43,23 +54,6 @@ export function PricingToggle() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <Button
-          variant={selectedCurrency === 'SOL' ? 'default' : 'outline'}
-          onClick={() => setSelectedCurrency('SOL')}
-          className="flex-1"
-        >
-          SOL
-        </Button>
-        <Button
-          variant={selectedCurrency === 'PAYAI' ? 'default' : 'outline'}
-          onClick={() => setSelectedCurrency('PAYAI')}
-          className="flex-1"
-        >
-          PAYAI
-        </Button>
-      </div>
-
       <Alert className={cn(
         "transition-colors",
         selectedCurrency === 'PAYAI' ? "bg-green-50" : "bg-blue-50"
@@ -71,20 +65,43 @@ export function PricingToggle() {
           }
         </AlertDescription>
       </Alert>
+      
+      <div className="flex items-center space-x-2">
+        <Button
+          variant={selectedCurrency === 'SOL' ? 'default' : 'outline'}
+          onClick={() => handleCurrencyChange('SOL')}
+          className="flex-1"
+        >
+          SOL
+        </Button>
+        <Button
+          variant={selectedCurrency === 'PAYAI' ? 'default' : 'outline'}
+          onClick={() => handleCurrencyChange('PAYAI')}
+          className="flex-1"
+        >
+          PAYAI
+        </Button>
+      </div>
 
       <div className="rounded-lg border p-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Current Price</span>
+        <div className="space-y-4">
+          <div className="flex justify-between text-md">
+            <span className="text-muted-foreground">Payment Amount</span>
             <span className="font-medium">
+              {selectedCurrency === 'SOL' ? amountSol : amountPayai} {selectedCurrency}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs -mt-4">
+            <span className="text-muted-foreground"></span>
+            <span className="font-light">
               {isLoading ? (
                 <span className="animate-pulse">Loading...</span>
               ) : error ? (
                 <span className="text-destructive">Error loading price</span>
               ) : selectedCurrency === 'SOL' ? (
-                `$${Number(solPrice).toFixed(2)}`
+                `≈$${(amountSol * Number(solPrice)).toFixed(2)}`
               ) : (
-                `$${Number(payaiPrice).toFixed(6)}`
+                `≈$${(amountPayai * Number(payaiPrice)).toFixed(2)}`
               )}
             </span>
           </div>
