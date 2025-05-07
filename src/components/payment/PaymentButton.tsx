@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createTransferCheckedInstruction, getMint } from '@solana/spl-token';
 
@@ -28,25 +28,7 @@ export function PaymentButton({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(false);
 
-  // Auto-trigger payment once wallet connected after initial click
-  useEffect(() => {
-    if (connected && pendingPayment) {
-      setVisible(false);
-      handlePayment();
-      setPendingPayment(false);
-    }
-  }, [connected, pendingPayment]);
-
-  const handleClick = () => {
-    if (!connected) {
-      setPendingPayment(true);
-      setVisible(true);
-    } else {
-      handlePayment();
-    }
-  };
-
-  const handlePayment = async () => {
+  const handlePayment = useCallback(async () => {
     if (!connected || !publicKey) return;
     
     setIsSubmitting(true);
@@ -102,6 +84,28 @@ export function PaymentButton({
       onError?.(err as Error);
     } finally {
       setIsSubmitting(false);
+    }
+  }, [connected, publicKey, currency, connection, escrowAddress, amount, sendTransaction, onSuccess, onError]);
+
+  // Auto-trigger payment once wallet connected after initial click
+  useEffect(() => {
+    const processPayment = async () => {
+      if (connected && pendingPayment) {
+        setVisible(false);
+        await handlePayment();
+        setPendingPayment(false);
+      }
+    };
+    
+    processPayment();
+  }, [connected, pendingPayment, setVisible, handlePayment]);
+
+  const handleClick = () => {
+    if (!connected) {
+      setPendingPayment(true);
+      setVisible(true);
+    } else {
+      handlePayment();
     }
   };
 

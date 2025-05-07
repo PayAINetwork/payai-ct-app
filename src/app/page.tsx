@@ -26,7 +26,7 @@ const mockPaymentLink = {
   id: '1',
   userSpecifiedAmount: 1000,
   userSpecifiedCurrency: 'PAYAI',
-  amountSol: 0.000557,
+  amountSol: 0.002712,
   amountPayai: 1000,
   status: 'Unfunded' as TimelineStatus,
   escrowAddress: 'w83QLKPfNrD5kcPeXxroi8wHgS7ENnUdHU5WJHcuPHa',
@@ -54,7 +54,7 @@ const mockDelivery = {
 };
 
 export default function PaymentLinkPage() {
-  const { data: agent, isLoading } = useQuery({
+  const { data: agent } = useQuery({
     queryKey: ['agent'],
     queryFn: async () => {
       // TODO: Replace with actual API call
