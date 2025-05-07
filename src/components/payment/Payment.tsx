@@ -1,22 +1,22 @@
-import { Button } from '@/components/ui/button';
 import { PricingToggle } from '@/components/payment/PricingToggle';
 import { PaymentDetails } from '@/components/payment/PaymentDetails';
+import { PaymentButton } from '@/components/payment/PaymentButton';
 import { useState } from 'react';
 
 interface PaymentProps {
   amountSol: number;
   amountPayai: number;
   escrowAddress: string;
-  onPayClick: () => void;
-  isSubmitting: boolean;
+  onSuccess?: (signature: string) => void;
+  onError?: (error: Error) => void;
 }
 
 export function Payment({ 
   amountSol, 
   amountPayai, 
-  escrowAddress, 
-  onPayClick, 
-  isSubmitting 
+  escrowAddress,
+  onSuccess,
+  onError
 }: PaymentProps) {
   const [selectedCurrency, setSelectedCurrency] = useState<'SOL' | 'PAYAI'>('PAYAI');
 
@@ -42,14 +42,13 @@ export function Payment({
         </div>
 
         <div className="border-t pt-6">
-          <Button 
-            size="lg" 
-            onClick={onPayClick} 
-            disabled={isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
-          </Button>
+          <PaymentButton 
+            amount={selectedCurrency === 'SOL' ? amountSol : amountPayai}
+            currency={selectedCurrency}
+            escrowAddress={escrowAddress}
+            onSuccess={onSuccess}
+            onError={onError}
+          />
         </div>
       </div>
     </div>
