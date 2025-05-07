@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { StatusTimeline, TimelineStatus } from '@/components/timeline/StatusTimeline';
 import { DeliverySection } from '@/components/delivery/DeliverySection';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { X } from 'lucide-react';
 import AccordionSection, { SectionItem } from '@/components/AccordionSection';
 import { Header } from '@/components/layout/Header';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Payment } from '@/components/payment/Payment';
+import { Button } from '@/components/ui/button';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -26,12 +24,12 @@ const mockAgent = {
 // Temporary mock data with timestamps for each status
 const mockPaymentLink = {
   id: '1',
-  userSpecifiedAmount: 20000,
+  userSpecifiedAmount: 1000,
   userSpecifiedCurrency: 'PAYAI',
-  amountSol: 0.0557,
-  amountPayai: 20000,
+  amountSol: 0.000557,
+  amountPayai: 1000,
   status: 'Unfunded' as TimelineStatus,
-  escrowAddress: '79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
+  escrowAddress: 'w83QLKPfNrD5kcPeXxroi8wHgS7ENnUdHU5WJHcuPHa',
   buyerXName: 'Notorious D.E.V',
   buyerXHandle: 'notorious_d_e_v',
   buyerRequest: 'Hey @dolos_diary, I want you to write a birthday tweet for my friend. Make it sting.',
@@ -64,32 +62,10 @@ export default function PaymentLinkPage() {
     }
   });
 
-  // Transaction status states
-  const [txStatus, setTxStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
-  const [txSignature, setTxSignature] = useState<string | null>(null);
-  const [txError, setTxError] = useState<string | null>(null);
-
-  // Handler to dismiss alerts
-  const dismissAlert = () => {
-    setTxStatus('idle');
-    setTxSignature(null);
-    setTxError(null);
-  };
-
   // Action handlers for accordion
   const handleNotifyAgent = () => console.log('Notify Agent clicked');
   const handleMarkStarted = () => console.log('Mark as Started clicked');
   const handleConfirmDelivery = () => console.log('Confirm Delivery clicked');
-
-  const handlePaymentSuccess = (signature: string) => {
-    setTxStatus('success');
-    setTxSignature(signature);
-  };
-
-  const handlePaymentError = (error: Error) => {
-    setTxStatus('failed');
-    setTxError(error.message);
-  };
 
   // Accordion sections configuration
   const sections: SectionItem[] = [
@@ -170,7 +146,7 @@ export default function PaymentLinkPage() {
       title: 'Payment',
       summary: (
         <div className="space-y-1">
-          <div>{mockPaymentLink.status === 'Unfunded' ? 'Awaiting Payment' : mockPaymentLink.status} - {mockPaymentLink.userSpecifiedAmount} {mockPaymentLink.userSpecifiedCurrency}</div>
+          <div>{mockPaymentLink.status === 'Unfunded' ? 'Awaiting Payment' : mockPaymentLink.status}</div>
           {mockPaymentLink.status !== 'Unfunded' && (
             <div className="text-xs text-gray-500">
               Funded at {new Date(mockPaymentLink.statusTimestamps.Funded).toLocaleString()}
@@ -184,8 +160,6 @@ export default function PaymentLinkPage() {
             amountSol={mockPaymentLink.amountSol}
             amountPayai={mockPaymentLink.amountPayai}
             escrowAddress={mockPaymentLink.escrowAddress}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
           />
         </div>
       )
@@ -264,28 +238,6 @@ export default function PaymentLinkPage() {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto p-4">
-        {txStatus !== 'idle' && (
-          <Alert className="mb-4">
-            <X className="h-4 w-4" onClick={dismissAlert} />
-            <AlertTitle>
-              {txStatus === 'success' ? 'Payment Successful' : 'Payment Failed'}
-            </AlertTitle>
-            <AlertDescription>
-              {txStatus === 'success' ? (
-                <a 
-                  href={`https://solscan.io/tx/${txSignature}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  View transaction on Solscan
-                </a>
-              ) : (
-                txError
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
         <AccordionSection sections={sections} currentState={mockPaymentLink.status} />
       </div>
     </div>

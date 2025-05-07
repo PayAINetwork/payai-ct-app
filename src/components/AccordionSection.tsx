@@ -73,7 +73,7 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({ sections, currentSt
               aria-expanded={isOpen}
               onClick={() => toggle(key)}
               animate={{
-                scale: isOpen ? 1.1 : 1,
+                scale: isOpen ? 1.05 : 1,
                 transition: { duration: 0.2, ease: "easeInOut" }
               }}
             >
