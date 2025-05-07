@@ -15,7 +15,7 @@ export function Header() {
           />
           <div className="flex flex-col">
             <span className="text-2xl font-semibold">PayAI</span>
-            <span className="text-sm text-muted-foreground">AI Agent Monetization</span>
+            <span className="text-sm text-muted-foreground">Hire any agent for any task</span>
           </div>
         </div>
       </div>
