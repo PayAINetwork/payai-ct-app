@@ -1,103 +1,245 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { StatusTimeline, TimelineStatus } from '@/components/timeline/StatusTimeline';
+import { DeliverySection } from '@/components/delivery/DeliverySection';
+import AccordionSection, { SectionItem } from '@/components/AccordionSection';
+import { Header } from '@/components/layout/Header';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Payment } from '@/components/payment/Payment';
+import { Button } from '@/components/ui/button';
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+// Temporary mock data - replace with actual API call
+const mockAgent = {
+  id: '1',
+  name: 'Dolos',
+  handle: 'dolos_diary',
+  profileImage: 'https://pbs.twimg.com/profile_images/1849948665722359808/uXMAoDxQ_400x400.jpg',  
+  twitterUrl: 'https://x.com/dolos_diary',
+  status: 'live' as const,
+  bio: 'your favorite $BULLY | powered by @dolion_agents –– ancient villain reborn | fully autonomous profile –– 79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
+};
+
+// Temporary mock data with timestamps for each status
+const mockPaymentLink = {
+  id: '1',
+  userSpecifiedAmount: 1000,
+  userSpecifiedCurrency: 'PAYAI',
+  amountSol: 0.000557,
+  amountPayai: 1000,
+  status: 'Unfunded' as TimelineStatus,
+  escrowAddress: 'w83QLKPfNrD5kcPeXxroi8wHgS7ENnUdHU5WJHcuPHa',
+  buyerXName: 'Notorious D.E.V',
+  buyerXHandle: 'notorious_d_e_v',
+  buyerRequest: 'Hey @dolos_diary, I want you to write a birthday tweet for my friend. Make it sting.',
+  buyerXStatusId: '1919956460995223634',
+  buyerXProfileImage: 'https://pbs.twimg.com/profile_images/1894573079327567872/foVOWapl_400x400.jpg',
+  statusTimestamps: {
+    Unfunded: '2023-07-01T12:00:00Z',
+    Funded: '2023-07-02T15:30:00Z',
+    Started: '',
+    Delivered: '',
+    Complete: ''
+  }
+};
+
+// Mock deliverable data
+const mockDelivery = {
+  deliverableUrl: 'https://example.com/delivery/1',
+  shareOptions: {
+    title: 'Deliverable Link',
+    text: 'View your deliverable here',
+  },
+};
+
+export default function PaymentLinkPage() {
+  const { data: agent, isLoading } = useQuery({
+    queryKey: ['agent'],
+    queryFn: async () => {
+      // TODO: Replace with actual API call
+      return mockAgent;
+    }
+  });
+
+  // Action handlers for accordion
+  const handleNotifyAgent = () => console.log('Notify Agent clicked');
+  const handleMarkStarted = () => console.log('Mark as Started clicked');
+  const handleConfirmDelivery = () => console.log('Confirm Delivery clicked');
+
+  // Accordion sections configuration
+  const sections: SectionItem[] = [
+    {
+      key: 'Order Description',
+      title: 'Order Details',
+      summary: (
+        <div className="space-y-1">
+          <div>{mockPaymentLink.buyerXName} hiring {agent?.name}</div>
+          <div className="text-xs text-gray-500">
+            Created at {new Date(mockPaymentLink.statusTimestamps.Unfunded).toLocaleString()}
+          </div>
+        </div>
+      ),
+      detail: (
+        <div className="space-y-4">
+          <div className="text-lg font-light">
+            {mockPaymentLink.buyerXName} is hiring {agent?.name}
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <a 
+                href={`https://x.com/${mockPaymentLink.buyerXHandle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Avatar>
+                  <AvatarImage src={mockPaymentLink.buyerXProfileImage} alt={mockPaymentLink.buyerXName} />
+                  <AvatarFallback>{mockPaymentLink.buyerXName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </a>
+              <div className="flex flex-col">
+                <span className="font-medium">{mockPaymentLink.buyerXName}</span>
+                <span className="text-sm text-muted-foreground">@{mockPaymentLink.buyerXHandle}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <a 
+                href={`https://x.com/${agent?.handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Avatar>
+                  <AvatarImage src={agent?.profileImage} alt={agent?.name || 'Agent'} />
+                  <AvatarFallback>{agent?.name?.slice(0, 2).toUpperCase() || 'AG'}</AvatarFallback>
+                </Avatar>
+              </a>
+              <div className="flex flex-col">
+                <span className="font-medium">{agent?.name || 'Agent'}</span>
+                <span className="text-sm text-muted-foreground">@{agent?.handle}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <blockquote className="mt-2 border-l-2 border-muted pl-4 italic text-muted-foreground">
+              {mockPaymentLink.buyerRequest}
+            </blockquote>
+          </div>
+
+          <a 
+            href={`https://x.com/${mockPaymentLink.buyerXHandle}/status/${mockPaymentLink.buyerXStatusId}`}
             target="_blank"
             rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline dark:text-blue-400"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
+            View on X
           </a>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      )
+    },
+    {
+      key: 'Unfunded',
+      title: 'Payment',
+      summary: (
+        <div className="space-y-1">
+          <div>{mockPaymentLink.status === 'Unfunded' ? 'Awaiting Payment' : mockPaymentLink.status}</div>
+          {mockPaymentLink.status !== 'Unfunded' && (
+            <div className="text-xs text-gray-500">
+              Funded at {new Date(mockPaymentLink.statusTimestamps.Funded).toLocaleString()}
+            </div>
+          )}
+        </div>
+      ),
+      detail: (
+        <div className="space-y-4">
+          <Payment 
+            amountSol={mockPaymentLink.amountSol}
+            amountPayai={mockPaymentLink.amountPayai}
+            escrowAddress={mockPaymentLink.escrowAddress}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        </div>
+      )
+    },
+    {
+      key: 'Funded',
+      title: 'Awaiting Agent',
+      summary: (
+        <div className="space-y-1">
+          <div>{agent?.name} - {agent?.status}</div>
+          {['Started','Delivered','Complete'].includes(mockPaymentLink.status) && (
+            <div className="text-xs text-gray-500">
+              Agent accepted at {new Date(mockPaymentLink.statusTimestamps.Started).toLocaleString()}
+            </div>
+          )}
+        </div>
+      ),
+      detail: <Button onClick={handleNotifyAgent}>Notify Agent</Button>
+    },
+    {
+      key: 'Started',
+      title: 'Job In Progress',
+      summary: (
+        <div className="text-sm text-gray-600">
+          Started at {new Date(mockPaymentLink.statusTimestamps.Started).toLocaleString()}
+        </div>
+      ),
+      detail: (
+        <div className="space-y-4">
+          <StatusTimeline
+            currentStatus={mockPaymentLink.status}
+            statusTimestamps={mockPaymentLink.statusTimestamps}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
+          <Button onClick={handleMarkStarted}>Mark as Started</Button>
+        </div>
+      )
+    },
+    {
+      key: 'Delivered',
+      title: 'Work Delivered',
+      summary: (
+        <div className="space-y-1">
+          <a href={mockDelivery.deliverableUrl} target="_blank" rel="noopener noreferrer" className="underline">
+            {mockDelivery.deliverableUrl.length > 20 ? mockDelivery.deliverableUrl.slice(0, 20) + '...' : mockDelivery.deliverableUrl}
+          </a>
+          {['Delivered','Complete'].includes(mockPaymentLink.status) && (
+            <div className="text-xs text-gray-500">
+              Delivered at {new Date(mockPaymentLink.statusTimestamps.Delivered).toLocaleString()}
+            </div>
+          )}
+        </div>
+      ),
+      detail: (
+        <div className="space-y-4">
+          <DeliverySection
+            deliverableUrl={mockDelivery.deliverableUrl}
+            shareOptions={mockDelivery.shareOptions}
           />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <Button onClick={handleConfirmDelivery}>Confirm Delivery</Button>
+        </div>
+      )
+    },
+    {
+      key: 'Complete',
+      title: 'Job Complete',
+      summary: (
+        <div className="text-sm text-gray-600">
+          Completed at {new Date(mockPaymentLink.statusTimestamps.Complete).toLocaleString()}
+        </div>
+      ),
+      detail: <p>Thank you! The job is complete.</p>
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto p-4">
+        <AccordionSection sections={sections} currentState={mockPaymentLink.status} />
+      </div>
     </div>
   );
-}
+} 
