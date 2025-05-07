@@ -29,21 +29,20 @@ const mockAgent = {
   bio: 'your favorite $BULLY | powered by @dolion_agents –– ancient villain reborn | fully autonomous profile –– 79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
 };
 
+// Temporary mock data with timestamps for each status
 const mockPaymentLink = {
   id: '1',
   amount: 20000,
   currency: 'PAYAI',
   status: 'Funded' as TimelineStatus,
   escrowAddress: '79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
-};
-
-// Mock timestamps for each status
-const mockTimestamps: Record<TimelineStatus, string> = {
-  Unfunded: '2023-07-01T12:00:00Z',
-  Funded: '2023-07-02T15:30:00Z',
-  'Work Started': '2023-07-03T10:00:00Z',
-  'Work Delivered': '2023-07-04T08:45:00Z',
-  Complete: '2023-07-05T18:15:00Z',
+  statusTimestamps: {
+    Unfunded: '2023-07-01T12:00:00Z',
+    Funded: '2023-07-02T15:30:00Z',
+    Started: '',
+    Delivered: '',
+    Complete: ''
+  }
 };
 
 // Mock deliverable data
@@ -220,45 +219,105 @@ export default function PaymentLinkPage() {
     {
       key: 'Order Description',
       title: 'Order Details',
-      summary: <>{agent?.name} - {agent?.handle}</>,
+      summary: (
+        <div className="space-y-1">
+          <div>{agent?.name} - {agent?.handle}</div>
+          <div className="text-xs text-gray-500">
+            Created at {new Date(mockPaymentLink.statusTimestamps.Unfunded).toLocaleString()}
+          </div>
+        </div>
+      ),
       detail: <p>Full order description goes here.</p>
     },
     {
       key: 'Unfunded',
       title: 'Payment',
-      summary: `${mockPaymentLink.amount} ${mockPaymentLink.currency} - ${mockPaymentLink.status}`,
+      summary: (
+        <div className="space-y-1">
+          <div>{mockPaymentLink.status} - {mockPaymentLink.amount} {mockPaymentLink.currency}</div>
+          {mockPaymentLink.status !== 'Unfunded' && (
+            <div className="text-xs text-gray-500">
+              Funded at {new Date(mockPaymentLink.statusTimestamps.Funded).toLocaleString()}
+            </div>
+          )}
+        </div>
+      ),
       detail: (
-        <Button size="lg" onClick={handlePayClick} disabled={isSubmitting}>
-          {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
-        </Button>
+        <div className="space-y-4">
+          <PricingToggle />
+          <EscrowSection address={mockPaymentLink.escrowAddress} />
+          <Button size="lg" onClick={handlePayClick} disabled={isSubmitting}>
+            {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
+          </Button>
+        </div>
       )
     },
     {
       key: 'Funded',
       title: 'Awaiting Agent',
-      summary: <>{agent?.name} - {agent?.status}</>,
+      summary: (
+        <div className="space-y-1">
+          <div>{agent?.name} - {agent?.status}</div>
+          {['Started','Delivered','Complete'].includes(mockPaymentLink.status) && (
+            <div className="text-xs text-gray-500">
+              Agent accepted at {new Date(mockPaymentLink.statusTimestamps.Started).toLocaleString()}
+            </div>
+          )}
+        </div>
+      ),
       detail: <Button onClick={handleNotifyAgent}>Notify Agent</Button>
     },
     {
-      key: 'Work Started',
+      key: 'Started',
       title: 'Job In Progress',
-      summary: mockTimestamps['Work Started'],
-      detail: <Button onClick={handleMarkStarted}>Mark as Started</Button>
+      summary: (
+        <div className="text-sm text-gray-600">
+          Started at {new Date(mockPaymentLink.statusTimestamps.Started).toLocaleString()}
+        </div>
+      ),
+      detail: (
+        <div className="space-y-4">
+          <StatusTimeline
+            currentStatus={mockPaymentLink.status}
+            statusTimestamps={mockPaymentLink.statusTimestamps}
+          />
+          <Button onClick={handleMarkStarted}>Mark as Started</Button>
+        </div>
+      )
     },
     {
-      key: 'Work Delivered',
+      key: 'Delivered',
       title: 'Work Delivered',
       summary: (
-        <a href={mockDelivery.deliverableUrl} target="_blank" rel="noopener noreferrer" className="underline">
-          {mockDelivery.deliverableUrl.length > 20 ? mockDelivery.deliverableUrl.slice(0, 20) + '...' : mockDelivery.deliverableUrl}
-        </a>
+        <div className="space-y-1">
+          <a href={mockDelivery.deliverableUrl} target="_blank" rel="noopener noreferrer" className="underline">
+            {mockDelivery.deliverableUrl.length > 20 ? mockDelivery.deliverableUrl.slice(0, 20) + '...' : mockDelivery.deliverableUrl}
+          </a>
+          {['Delivered','Complete'].includes(mockPaymentLink.status) && (
+            <div className="text-xs text-gray-500">
+              Delivered at {new Date(mockPaymentLink.statusTimestamps.Delivered).toLocaleString()}
+            </div>
+          )}
+        </div>
       ),
-      detail: <Button onClick={handleConfirmDelivery}>Confirm Delivery</Button>
+      detail: (
+        <div className="space-y-4">
+          <DeliverySection
+            deliverableUrl={mockDelivery.deliverableUrl}
+            shareOptions={mockDelivery.shareOptions}
+          />
+          <Button onClick={handleConfirmDelivery}>Confirm Delivery</Button>
+        </div>
+      )
     },
     {
       key: 'Complete',
       title: 'Job Complete',
-      summary: mockTimestamps['Complete'],
+      summary: (
+        <div className="text-sm text-gray-600">
+          Completed at {new Date(mockPaymentLink.statusTimestamps.Complete).toLocaleString()}
+        </div>
+      ),
       detail: <p>Thank you! The job is complete.</p>
     }
   ];
@@ -295,81 +354,9 @@ export default function PaymentLinkPage() {
           </div>
         </div>
       </header>
-
-      {/* Main Content */}
-      <main className="container px-4 py-8 md:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <section>
-            <PricingToggle />
-          </section>
-          {/* Escrow Section */}
-          <EscrowSection address={mockPaymentLink.escrowAddress} />
-          {/* Pay With Wallet Button under QR Code */}
-          <div className="mt-4 flex justify-center">
-            <Button size="lg" onClick={handlePayClick} disabled={isSubmitting}>
-              {isSubmitting ? 'Processing...' : 'Pay With Wallet'}
-            </Button>
-          </div>
-          {/* Transaction Feedback Alerts */}
-          {txStatus === 'processing' && (
-            <Alert className="mt-4 relative">
-              <button
-                onClick={dismissAlert}
-                className="absolute top-2 right-2 text-muted-foreground hover:text-current"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <AlertDescription>Transaction is processing...</AlertDescription>
-            </Alert>
-          )}
-          {txStatus === 'success' && txSignature && (
-            <Alert className="mt-4 transition-colors bg-green-50 relative">
-              <button
-                onClick={dismissAlert}
-                className="absolute top-2 right-2 text-muted-foreground hover:text-current"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <AlertTitle>Success</AlertTitle>
-              <AlertDescription>
-                Transaction succeeded. <a href={`https://solscan.io/tx/${txSignature}`} target="_blank" rel="noopener noreferrer" className="underline">View on Solscan.</a>
-              </AlertDescription>
-            </Alert>
-          )}
-          {txStatus === 'failed' && (
-            <Alert variant="destructive" className="mt-4 relative">
-              <button
-                onClick={dismissAlert}
-                className="absolute top-2 right-2 text-destructive hover:text-current"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>Transaction failed: {txError}</AlertDescription>
-            </Alert>
-          )}
-          {/* Status Timeline */}
-          <section className="rounded-lg border p-4">
-            <h2 className="text-lg font-semibold">Status Timeline</h2>
-            <StatusTimeline
-              currentStatus={mockPaymentLink.status}
-              statusTimestamps={mockTimestamps}
-            />
-          </section>
-          {/* Delivery Section */}
-          <section className="rounded-lg border p-4">
-            <h2 className="text-lg font-semibold">Delivery</h2>
-            <DeliverySection
-              deliverableUrl={mockDelivery.deliverableUrl}
-              shareOptions={mockDelivery.shareOptions}
-            />
-          </section>
-        </div>
-        {/* Accordion at bottom */}
-        <div className="mx-auto max-w-3xl mt-8">
-          <AccordionSection sections={sections} currentState={mockPaymentLink.status} />
-        </div>
-      </main>
+      <div className="container mx-auto p-4">
+        <AccordionSection sections={sections} currentState={mockPaymentLink.status} />
+      </div>
     </div>
   );
 } 
