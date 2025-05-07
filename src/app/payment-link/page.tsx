@@ -238,7 +238,7 @@ export default function PaymentLinkPage() {
       detail: (
         <div className="space-y-4">
           <div className="text-lg font-light">
-            {mockPaymentLink.buyerXName} hiring {agent?.name} for {mockPaymentLink.amount} {mockPaymentLink.currency}
+            {mockPaymentLink.buyerXName} hiring {agent?.name}
           </div>
           
           <div className="flex items-center gap-6">
