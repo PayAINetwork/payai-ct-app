@@ -53,6 +53,15 @@ const mockDelivery = {
   },
 };
 
+// Map status to visible section keys
+const statusToVisibleSections: Record<TimelineStatus, string[]> = {
+  Unfunded: ['Order Description', 'Unfunded'],
+  Funded: ['Order Description', 'Unfunded', 'Funded'],
+  Started: ['Order Description', 'Unfunded', 'Funded', 'Started'],
+  Delivered: ['Order Description', 'Unfunded', 'Funded', 'Started', 'Delivered'],
+  Complete: ['Order Description', 'Unfunded', 'Funded', 'Started', 'Delivered', 'Complete']
+};
+
 export default function PaymentLinkPage() {
   const { data: agent } = useQuery({
     queryKey: ['agent'],
@@ -68,7 +77,7 @@ export default function PaymentLinkPage() {
   const handleConfirmDelivery = () => console.log('Confirm Delivery clicked');
 
   // Accordion sections configuration
-  const sections: SectionItem[] = [
+  const allSections: SectionItem[] = [
     {
       key: 'Order Description',
       title: 'Order Details',
@@ -234,11 +243,16 @@ export default function PaymentLinkPage() {
     }
   ];
 
+  // Filter sections based on current status
+  const visibleSections = allSections.filter(section => 
+    statusToVisibleSections[mockPaymentLink.status].includes(section.key)
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto p-4">
-        <AccordionSection sections={sections} currentState={mockPaymentLink.status} />
+        <AccordionSection sections={visibleSections} currentState={mockPaymentLink.status} />
       </div>
     </div>
   );
