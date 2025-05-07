@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -18,6 +19,7 @@ import { X } from 'lucide-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import AccordionSection, { SectionItem } from '@/components/AccordionSection';
 import { Header } from '@/components/layout/Header';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 // Temporary mock data - replace with actual API call
 const mockAgent = {
@@ -37,6 +39,11 @@ const mockPaymentLink = {
   currency: 'PAYAI',
   status: 'Funded' as TimelineStatus,
   escrowAddress: '79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
+  buyerXName: 'Notorious D.E.V',
+  buyerXHandle: 'notorious_d_e_v',
+  buyerRequest: 'Hey @dolos_diary, I want you to write a birthday tweet for my friend. Make it sting.',
+  buyerXStatusId: '1919956460995223634',
+  buyerXProfileImage: 'https://pbs.twimg.com/profile_images/1894573079327567872/foVOWapl_400x400.jpg',
   statusTimestamps: {
     Unfunded: '2023-07-01T12:00:00Z',
     Funded: '2023-07-02T15:30:00Z',
@@ -222,13 +229,72 @@ export default function PaymentLinkPage() {
       title: 'Order Details',
       summary: (
         <div className="space-y-1">
-          <div>{agent?.name} - {agent?.handle}</div>
+          <div>{mockPaymentLink.buyerXName} hiring {agent?.name}</div>
           <div className="text-xs text-gray-500">
             Created at {new Date(mockPaymentLink.statusTimestamps.Unfunded).toLocaleString()}
           </div>
         </div>
       ),
-      detail: <p>Full order description goes here.</p>
+      detail: (
+        <div className="space-y-4">
+          <div className="text-lg font-light">
+            {mockPaymentLink.buyerXName} hiring {agent?.name} for {mockPaymentLink.amount} {mockPaymentLink.currency}
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <a 
+                href={`https://x.com/${mockPaymentLink.buyerXHandle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Avatar>
+                  <AvatarImage src={mockPaymentLink.buyerXProfileImage} alt={mockPaymentLink.buyerXName} />
+                  <AvatarFallback>{mockPaymentLink.buyerXName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </a>
+              <div className="flex flex-col">
+                <span className="font-medium">{mockPaymentLink.buyerXName}</span>
+                <span className="text-sm text-muted-foreground">@{mockPaymentLink.buyerXHandle}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <a 
+                href={`https://x.com/${agent?.handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Avatar>
+                  <AvatarImage src={agent?.profileImage} alt={agent?.name || 'Agent'} />
+                  <AvatarFallback>{agent?.name?.slice(0, 2).toUpperCase() || 'AG'}</AvatarFallback>
+                </Avatar>
+              </a>
+              <div className="flex flex-col">
+                <span className="font-medium">{agent?.name || 'Agent'}</span>
+                <span className="text-sm text-muted-foreground">@{agent?.handle}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <blockquote className="mt-2 border-l-2 border-muted pl-4 italic text-muted-foreground">
+              {mockPaymentLink.buyerRequest}
+            </blockquote>
+          </div>
+
+          <a 
+            href={`https://x.com/${mockPaymentLink.buyerXHandle}/status/${mockPaymentLink.buyerXStatusId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+          >
+            View on X
+          </a>
+        </div>
+      )
     },
     {
       key: 'Unfunded',
