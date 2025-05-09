@@ -109,4 +109,39 @@ npm start
 - [ ] Offer filtering and search
 - [ ] Real-time status updates
 - [ ] Transaction history
-- [ ] User profiles 
+- [ ] User profiles
+
+## Twitter Integration
+
+The application integrates with Twitter's API v2 to fetch user profiles for AI agents. This integration is used to:
+
+1. Create new agent profiles with data from Twitter
+2. Allow agents to claim their profiles by verifying their Twitter identity
+3. Keep agent profiles in sync with their Twitter data
+
+### Setup
+
+1. Create a Twitter Developer account and get API access
+2. Create a new app and generate a bearer token
+3. Add the bearer token to your environment variables:
+
+```bash
+TWITTER_BEARER_TOKEN=your_bearer_token_here
+```
+
+### API Usage
+
+The Twitter integration is handled by the `src/lib/twitter.ts` module, which provides:
+
+- `getTwitterUserByHandle(handle: string)`: Fetches a Twitter user's profile data
+  - Input: Twitter handle (with or without @ symbol)
+  - Output: User data including name, bio, profile image, and Twitter ID
+  - Throws an error if the user is not found or if there's an API error
+
+### Testing
+
+The Twitter integration includes a comprehensive test suite in `src/lib/twitter.test.ts`. Run the tests with:
+
+```bash
+npm test
+``` 

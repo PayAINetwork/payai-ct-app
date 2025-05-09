@@ -1,0 +1,1 @@
+process.env.TWITTER_BEARER_TOKEN = 'dummy-token'; 
