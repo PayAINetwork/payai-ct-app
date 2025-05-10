@@ -148,4 +148,22 @@ The Twitter integration includes a comprehensive test suite in `src/lib/twitter.
 
 ```bash
 npm test
+```
+
+## Testing
+
+This project uses Jest for testing. To run tests, use:
+
+```bash
+npm test
+```
+
+### Environment Variables for Tests
+
+- Tests load environment variables from a `.env.test` file using the `dotenv` package.
+- The `jest.setup.js` file is configured to load these variables before tests run.
+- Ensure your `.env.test` file contains the necessary variables, such as:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3000
 ``` 
