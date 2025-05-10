@@ -89,8 +89,12 @@ npm install
 
 2. Create `.env.local`:
 ```env
+# API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+
+# Twitter API Configuration
+TWITTER_BEARER_TOKEN=your_bearer_token_here
 ```
 
 3. Run development server:

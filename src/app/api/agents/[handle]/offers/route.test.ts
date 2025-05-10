@@ -54,6 +54,8 @@ describe('POST /api/agents/[handle]/offers', () => {
     rpc: jest.fn(),
   } as any;
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
   beforeEach(() => {
     jest.clearAllMocks();
     (createServerSupabaseClient as any).mockReturnValue(mockSupabase);
@@ -104,7 +106,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       return Promise.resolve({ error: null });
     });
 
-    const request = new Request('http://localhost:3000/api/agents/testagent/offers', {
+    const request = new Request(`${API_URL}/agents/testagent/offers`, {
       method: 'POST',
       body: JSON.stringify({
         amount: 100,
@@ -181,7 +183,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       return Promise.resolve({ error: null });
     });
 
-    const request = new Request('http://localhost:3000/api/agents/newagent/offers', {
+    const request = new Request(`${API_URL}/agents/newagent/offers`, {
       method: 'POST',
       body: JSON.stringify({
         amount: 100,
@@ -242,7 +244,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       return Promise.resolve({ error: null });
     });
 
-    const request = new Request('http://localhost:3000/api/agents/testagent/offers', {
+    const request = new Request(`${API_URL}/agents/testagent/offers`, {
       method: 'POST',
       body: JSON.stringify({
         amount: 100,
@@ -303,7 +305,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       return Promise.resolve({ error: null });
     });
 
-    const request = new Request('http://localhost:3000/api/agents/testagent/offers', {
+    const request = new Request(`${API_URL}/agents/testagent/offers`, {
       method: 'POST',
       body: JSON.stringify({
         amount: 100,
@@ -333,7 +335,7 @@ describe('POST /api/agents/[handle]/offers', () => {
     // Mock Twitter API error
     (getTwitterUserByHandle as any).mockRejectedValue(new Error('Twitter user not found'));
 
-    const request = new Request('http://localhost:3000/api/agents/nonexistent/offers', {
+    const request = new Request(`${API_URL}/agents/nonexistent/offers`, {
       method: 'POST',
       body: JSON.stringify({
         amount: 100,
