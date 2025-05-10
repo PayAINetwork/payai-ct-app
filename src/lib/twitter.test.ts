@@ -70,7 +70,7 @@ describe('Twitter API', () => {
     it('should handle missing user data', async () => {
       mockUserByUsername.mockResolvedValue({ data: null });
 
-      await expect(getTwitterUserByHandle('nonexistent')).rejects.toThrow('Twitter user not found');
+      await expect(getTwitterUserByHandle('nonexistent')).rejects.toThrow('Twitter user data not found');
     });
 
     it('should handle API errors', async () => {
