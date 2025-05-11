@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { z } from 'zod';
 
@@ -53,13 +53,23 @@ export async function GET(
 
 // Update an agent
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
-    
-    // Get the current user
+
+    // Validate request body
+    const body = await request.json();
+    const result = updateAgentSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    // Get user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return NextResponse.json(
@@ -67,76 +77,94 @@ export async function PATCH(
         { status: 401 }
       );
     }
-    
-    // Verify the agent exists and belongs to the user
-    const { data: existingAgent, error: fetchError } = await supabase
+
+    // Get agent
+    const { data: agent, error: agentError } = await supabase
       .from('agents')
-      .select('created_by')
+      .select('*')
       .eq('id', params.id)
       .single();
-      
-    if (fetchError) {
-      if (fetchError.code === 'PGRST116') {
+
+    if (agentError) {
+      if (agentError.code === 'PGRST116') {
         return NextResponse.json(
           { error: 'Agent not found' },
           { status: 404 }
         );
       }
-      
-      console.error('Error fetching agent:', fetchError);
+      console.error('Error fetching agent:', agentError);
       return NextResponse.json(
         { error: 'Failed to fetch agent' },
         { status: 500 }
       );
     }
-    
-    if (existingAgent.created_by !== user.id) {
+
+    // Check authorization
+    if (agent.created_by !== user.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
       );
     }
-    
-    // Parse and validate request body
-    const body = await request.json();
-    const result = updateAgentSchema.safeParse(body);
-    if (!result.success) {
-      return NextResponse.json(
-        { error: 'Invalid request body', details: result.error.format() },
-        { status: 400 }
-      );
-    }
-    
-    const updateData = result.data;
-    
-    // If handle is being updated, check if it's already taken
-    if (updateData.handle) {
-      const { data: handleCheck } = await supabase
+
+    // Check handle uniqueness if handle is being updated
+    if (body.handle && body.handle !== agent.handle) {
+      // Fetch the agent's Twitter handle
+      const { data: twitterData, error: twitterError } = await supabase
         .from('agents')
-        .select('id')
-        .eq('handle', updateData.handle)
-        .neq('id', params.id)
+        .select('twitter_handle')
+        .eq('id', params.id)
         .single();
-        
-      if (handleCheck) {
+
+      if (twitterError) {
+        console.error('Error fetching Twitter handle:', twitterError);
+        return NextResponse.json(
+          { error: 'Failed to fetch Twitter handle' },
+          { status: 500 }
+        );
+      }
+
+      if (!twitterData || twitterData.twitter_handle !== body.handle) {
+        return NextResponse.json(
+          { error: 'Handle can only be updated to the agent\'s current Twitter handle' },
+          { status: 400 }
+        );
+      }
+
+      const { data: existingAgent, error: checkError } = await supabase
+        .from('agents')
+        .select('handle')
+        .neq('id', params.id)
+        .eq('handle', body.handle)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking handle uniqueness:', checkError);
+        return NextResponse.json(
+          { error: 'Failed to check handle uniqueness' },
+          { status: 500 }
+        );
+      }
+
+      if (existingAgent) {
         return NextResponse.json(
           { error: 'Handle already taken' },
           { status: 409 }
         );
       }
     }
-    
-    // Update the agent
-    const { data: agent, error: updateError } = await supabase
+
+    // Update agent
+    const { data: updatedAgent, error: updateError } = await supabase
       .from('agents')
       .update({
-        ...updateData,
+        ...body,
         updated_at: new Date().toISOString(),
       })
       .eq('id', params.id)
       .select()
       .single();
-      
+
     if (updateError) {
       console.error('Error updating agent:', updateError);
       return NextResponse.json(
@@ -144,8 +172,8 @@ export async function PATCH(
         { status: 500 }
       );
     }
-    
-    return NextResponse.json(agent);
+
+    return NextResponse.json(updatedAgent);
   } catch (error) {
     console.error('Error in agent update:', error);
     return NextResponse.json(
