@@ -17,16 +17,26 @@ export async function POST(
       );
     }
 
-    // Verify the token belongs to the user
+    // verify the token exists and is not revoked
     const { data: token, error: fetchError } = await supabase
       .from('access_tokens')
       .select('*')
       .eq('id', params.id)
-      .eq('user_id', user.id)
       .is('revoked_at', null)
       .single();
 
-    if (fetchError || !token) {
+    if (fetchError) {
+      console.error('Error fetching token:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to revoke token' },
+        { status: 500 }
+      );
+    }
+
+    // verify the token belongs to the user
+    // note: don't return a 403 if the token doesn't belong to the user
+    // so as to not leak information about which tokens belong to which users
+    if (!token || token.user_id !== user.id) {
       return NextResponse.json(
         { error: 'Token not found or already revoked' },
         { status: 404 }

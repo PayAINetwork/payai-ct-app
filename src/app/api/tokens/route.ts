@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 }
 
 // Get all tokens for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
     
