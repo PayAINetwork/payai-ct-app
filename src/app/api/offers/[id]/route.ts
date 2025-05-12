@@ -9,10 +9,11 @@ const paramsSchema = z.object({
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate offer ID
+    const params = await context.params;
     const result = paramsSchema.safeParse(params);
     if (!result.success) {
       return NextResponse.json(

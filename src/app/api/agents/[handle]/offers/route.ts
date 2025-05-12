@@ -12,7 +12,7 @@ const createOfferSchema = z.object({
 
 export async function POST(
   request: Request,
-  { params }: { params: { handle: string } }
+  context: { params: Promise<{ handle: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -37,10 +37,10 @@ export async function POST(
     }
     
     const { amount, currency, description } = result.data;
-    const { handle } = params;
+    const { handle } = await context.params;
 
     // Check if agent exists
-    const { data: existingAgent, error: agentError } = await supabase
+    const { data: existingAgent } = await supabase
       .from('agents')
       .select('id')
       .eq('handle', handle)

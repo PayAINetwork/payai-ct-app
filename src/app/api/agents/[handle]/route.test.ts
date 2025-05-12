@@ -41,7 +41,7 @@ describe('GET /api/agents/[handle]', () => {
       }),
     });
 
-    const response = await GET(new Request('http://localhost:3000/api/agents/testagent'), {
+    const response = await GET(new Request(`${API_URL}/agents/${mockAgent.handle}`), {
       params: { handle: mockAgent.handle },
     });
     const data = await response.json();
@@ -59,7 +59,7 @@ describe('GET /api/agents/[handle]', () => {
       }),
     });
 
-    const response = await GET(new Request('http://localhost:3000/api/agents/nonexistent'), {
+    const response = await GET(new Request(`${API_URL}/agents/nonexistent`), {
       params: { handle: 'nonexistent' },
     });
     const data = await response.json();
@@ -77,7 +77,7 @@ describe('GET /api/agents/[handle]', () => {
       }),
     });
 
-    const response = await GET(new Request('http://localhost:3000/api/agents/testagent'), {
+    const response = await GET(new Request(`${API_URL}/agents/${mockAgent.handle}`), {
       params: { handle: mockAgent.handle },
     });
     const data = await response.json();

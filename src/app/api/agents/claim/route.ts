@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { getTwitterUserByHandle } from '@/lib/twitter';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const supabase = await createServerSupabaseClient();
     

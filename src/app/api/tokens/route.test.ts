@@ -127,15 +127,6 @@ describe('POST /api/tokens', () => {
     email: 'test@example.com',
   };
 
-  const mockToken = {
-    id: '123e4567-e89b-12d3-a456-426614174001',
-    user_id: mockUser.id,
-    name: 'Test Token',
-    created_at: '2024-03-21T00:00:00Z',
-    expires_at: '2024-04-21T00:00:00Z',
-    revoked_at: null,
-  };
-
   const mockSupabase = {
     auth: {
       getUser: jest.fn(),

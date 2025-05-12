@@ -8,21 +8,6 @@ const createAgentSchema = z.object({
   handle: z.string().min(1).max(50), // Only require handle, we'll fetch the rest from Twitter
 });
 
-// Schema for agent data
-const agentSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1).max(50),
-  handle: z.string().min(1).max(50),
-  bio: z.string().min(1).max(500),
-  profileImage: z.string().url().optional(),
-  status: z.enum(['live', 'invite']).default('invite'),
-  twitterUserId: z.string().optional(),
-  lastTwitterSync: z.string().datetime().optional(),
-  created_by: z.string(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
-});
-
 // List all agents
 export async function GET(request: Request) {
   try {

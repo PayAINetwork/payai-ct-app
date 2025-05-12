@@ -15,15 +15,17 @@ const updateAgentSchema = z.object({
 // Get a specific agent
 export async function GET(
   request: Request,
-  { params }: { params: { handle: string } }
+  context: { params: Promise<{ handle: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
     
+    const { handle } = await context.params;
+
     const { data: agent, error } = await supabase
       .from('agents')
       .select('*')
-      .eq('handle', params.handle)
+      .eq('handle', handle)
       .single();
       
     if (error) {
@@ -54,10 +56,12 @@ export async function GET(
 // Update an agent
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { handle: string } }
+  context: { params: Promise<{ handle: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+
+    const { handle } = await context.params;
 
     // Validate request body
     const body = await request.json();
@@ -82,7 +86,7 @@ export async function PATCH(
     const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('*')
-      .eq('handle', params.handle)
+      .eq('handle', handle)
       .single();
 
     if (agentError) {
@@ -113,7 +117,7 @@ export async function PATCH(
       const { data: twitterData, error: twitterError } = await supabase
         .from('agents')
         .select('twitter_handle')
-        .eq('handle', params.handle)
+        .eq('handle', handle)
         .single();
 
       if (twitterError) {
@@ -134,7 +138,7 @@ export async function PATCH(
       const { data: existingAgent, error: checkError } = await supabase
         .from('agents')
         .select('handle')
-        .neq('handle', params.handle)
+        .neq('handle', handle)
         .eq('handle', body.handle)
         .single();
 
@@ -161,7 +165,7 @@ export async function PATCH(
         ...body,
         updated_at: new Date().toISOString(),
       })
-      .eq('handle', params.handle)
+      .eq('handle', handle)
       .select()
       .single();
 
@@ -186,11 +190,13 @@ export async function PATCH(
 // Delete an agent
 export async function DELETE(
   request: Request,
-  { params }: { params: { handle: string } }
+  context: { params: Promise<{ handle: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
     
+    const { handle } = await context.params;
+
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -204,7 +210,7 @@ export async function DELETE(
     const { data: existingAgent, error: fetchError } = await supabase
       .from('agents')
       .select('created_by')
-      .eq('handle', params.handle)
+      .eq('handle', handle)
       .single();
       
     if (fetchError) {
@@ -233,7 +239,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('agents')
       .delete()
-      .eq('handle', params.handle);
+      .eq('handle', handle);
       
     if (deleteError) {
       console.error('Error deleting agent:', deleteError);

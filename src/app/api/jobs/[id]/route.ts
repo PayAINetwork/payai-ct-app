@@ -9,10 +9,11 @@ const paramsSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate job ID
+    const params = await context.params;
     const validatedParams = paramsSchema.parse(params);
     
     // Create Supabase client

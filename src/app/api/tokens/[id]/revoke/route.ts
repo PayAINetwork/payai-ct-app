@@ -3,11 +3,11 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
-    
+
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -16,6 +16,8 @@ export async function POST(
         { status: 401 }
       );
     }
+
+    const params = await context.params;
 
     // verify the token exists and is not revoked
     const { data: token, error: fetchError } = await supabase

@@ -1,5 +1,4 @@
 import { getTwitterUserByHandle } from './twitter';
-import { TwitterApi } from 'twitter-api-v2';
 
 // Mock the Twitter API client
 jest.mock('twitter-api-v2', () => {

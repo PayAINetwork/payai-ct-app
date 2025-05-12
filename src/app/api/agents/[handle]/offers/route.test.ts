@@ -2,7 +2,6 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { POST } from './route';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { getTwitterUserByHandle } from '@/lib/twitter';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 // Mock dependencies
 jest.mock('@/lib/supabase', () => ({
@@ -106,7 +105,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       return Promise.resolve({ error: null });
     });
 
-    const request = new Request(`${API_URL}/agents/testagent/offers`, {
+    const request = new Request(`${API_URL}/agents/${mockAgent.handle}/offers`, {
       method: 'POST',
       body: JSON.stringify({
         amount: 100,
@@ -324,7 +323,7 @@ describe('POST /api/agents/[handle]/offers', () => {
 
   it('should handle Twitter API errors for new agent creation', async () => {
     // Mock non-existent agent
-    mockSupabase.from.mockImplementation((table: string) => ({
+    mockSupabase.from.mockImplementation(() => ({
       select: () => ({
         eq: () => ({
           single: () => Promise.resolve({ data: null, error: null }),
