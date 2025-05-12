@@ -8,7 +8,7 @@ jest.mock('@/lib/supabase', () => ({
   createServerSupabaseClient: jest.fn(),
 }));
 
-describe('GET /api/agents/[id]', () => {
+describe('GET /api/agents/[handle]', () => {
   const mockAgent = {
     id: '123e4567-e89b-12d3-a456-426614174001',
     handle: 'testagent',
@@ -16,6 +16,7 @@ describe('GET /api/agents/[id]', () => {
     bio: 'Test bio',
     profile_image_url: 'https://example.com/avatar.jpg',
     status: 'live',
+    created_by: '123e4567-e89b-12d3-a456-426614174000',
     created_at: '2024-03-21T00:00:00Z',
     updated_at: '2024-03-21T00:00:00Z',
   };
@@ -32,7 +33,6 @@ describe('GET /api/agents/[id]', () => {
   });
 
   it('should return agent details', async () => {
-    // Mock Supabase response
     mockSupabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
@@ -41,8 +41,8 @@ describe('GET /api/agents/[id]', () => {
       }),
     });
 
-    const response = await GET(new NextRequest(`${API_URL}/agents/${mockAgent.id}`), {
-      params: { id: mockAgent.id },
+    const response = await GET(new Request('http://localhost:3000/api/agents/testagent'), {
+      params: { handle: mockAgent.handle },
     });
     const data = await response.json();
 
@@ -50,8 +50,7 @@ describe('GET /api/agents/[id]', () => {
     expect(data).toEqual(mockAgent);
   });
 
-  it('should return 404 for non-existent agent', async () => {
-    // Mock Supabase response
+  it('should return 404 for nonexistent agent', async () => {
     mockSupabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
@@ -60,8 +59,8 @@ describe('GET /api/agents/[id]', () => {
       }),
     });
 
-    const response = await GET(new NextRequest(`${API_URL}/agents/nonexistent`), {
-      params: { id: 'nonexistent' },
+    const response = await GET(new Request('http://localhost:3000/api/agents/nonexistent'), {
+      params: { handle: 'nonexistent' },
     });
     const data = await response.json();
 
@@ -70,17 +69,16 @@ describe('GET /api/agents/[id]', () => {
   });
 
   it('should return 500 for database error', async () => {
-    // Mock database error
     mockSupabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
-          single: () => Promise.resolve({ data: null, error: new Error('Database error') }),
+          single: () => Promise.resolve({ data: null, error: { code: 'OTHER_ERROR' } }),
         }),
       }),
     });
 
-    const response = await GET(new NextRequest(`${API_URL}/agents/${mockAgent.id}`), {
-      params: { id: mockAgent.id },
+    const response = await GET(new Request('http://localhost:3000/api/agents/testagent'), {
+      params: { handle: mockAgent.handle },
     });
     const data = await response.json();
 
@@ -89,7 +87,7 @@ describe('GET /api/agents/[id]', () => {
   });
 });
 
-describe('PATCH /api/agents/[id]', () => {
+describe('PATCH /api/agents/[handle]', () => {
   const mockUser = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     email: 'test@example.com',
@@ -150,7 +148,7 @@ describe('PATCH /api/agents/[id]', () => {
       return {};
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'PATCH',
       body: JSON.stringify({
         name: 'Updated Agent',
@@ -158,7 +156,7 @@ describe('PATCH /api/agents/[id]', () => {
       }),
     });
 
-    const response = await PATCH(request, { params: { id: mockAgent.id } });
+    const response = await PATCH(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -169,14 +167,14 @@ describe('PATCH /api/agents/[id]', () => {
     // Mock unauthenticated user
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'PATCH',
       body: JSON.stringify({
         name: 'Updated Agent',
       }),
     });
 
-    const response = await PATCH(request, { params: { id: mockAgent.id } });
+    const response = await PATCH(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(401);
@@ -196,14 +194,14 @@ describe('PATCH /api/agents/[id]', () => {
       }),
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'PATCH',
       body: JSON.stringify({
         name: 'Updated Agent',
       }),
     });
 
-    const response = await PATCH(request, { params: { id: mockAgent.id } });
+    const response = await PATCH(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(403);
@@ -220,14 +218,14 @@ describe('PATCH /api/agents/[id]', () => {
       }),
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'PATCH',
       body: JSON.stringify({
         name: '', // Invalid: empty name
       }),
     });
 
-    const response = await PATCH(request, { params: { id: mockAgent.id } });
+    const response = await PATCH(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -249,14 +247,14 @@ describe('PATCH /api/agents/[id]', () => {
       return {};
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'PATCH',
       body: JSON.stringify({
         handle: 'differenthandle',
       }),
     });
 
-    const response = await PATCH(request, { params: { id: mockAgent.id } });
+    const response = await PATCH(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -285,14 +283,14 @@ describe('PATCH /api/agents/[id]', () => {
       return {};
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'PATCH',
       body: JSON.stringify({
         name: 'Updated Agent',
       }),
     });
 
-    const response = await PATCH(request, { params: { id: mockAgent.id } });
+    const response = await PATCH(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(500);
@@ -300,7 +298,7 @@ describe('PATCH /api/agents/[id]', () => {
   });
 });
 
-describe('DELETE /api/agents/[id]', () => {
+describe('DELETE /api/agents/[handle]', () => {
   const mockUser = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     email: 'test@example.com',
@@ -351,11 +349,11 @@ describe('DELETE /api/agents/[id]', () => {
       return {};
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'DELETE',
     });
 
-    const response = await DELETE(request, { params: { id: mockAgent.id } });
+    const response = await DELETE(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -366,11 +364,11 @@ describe('DELETE /api/agents/[id]', () => {
     // Mock unauthenticated user
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'DELETE',
     });
 
-    const response = await DELETE(request, { params: { id: mockAgent.id } });
+    const response = await DELETE(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(401);
@@ -390,19 +388,18 @@ describe('DELETE /api/agents/[id]', () => {
       }),
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'DELETE',
     });
 
-    const response = await DELETE(request, { params: { id: mockAgent.id } });
+    const response = await DELETE(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(403);
     expect(data.error).toBe('Unauthorized');
   });
 
-  it('should return 404 for non-existent agent', async () => {
-    // Mock non-existent agent
+  it('should return 404 for nonexistent agent', async () => {
     mockSupabase.from.mockReturnValue({
       select: () => ({
         eq: () => ({
@@ -415,7 +412,7 @@ describe('DELETE /api/agents/[id]', () => {
       method: 'DELETE',
     });
 
-    const response = await DELETE(request, { params: { id: 'nonexistent' } });
+    const response = await DELETE(request, { params: { handle: 'nonexistent' } });
     const data = await response.json();
 
     expect(response.status).toBe(404);
@@ -423,7 +420,7 @@ describe('DELETE /api/agents/[id]', () => {
   });
 
   it('should return 500 for database error', async () => {
-    // Mock database error
+    // Mock Supabase responses
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'agents') {
         return {
@@ -433,18 +430,18 @@ describe('DELETE /api/agents/[id]', () => {
             }),
           }),
           delete: () => ({
-            eq: () => Promise.resolve({ error: new Error('Database error') }),
+            eq: () => Promise.resolve({ error: { code: 'OTHER_ERROR' } }),
           }),
         };
       }
       return {};
     });
 
-    const request = new NextRequest(`${API_URL}/agents/${mockAgent.id}`, {
+    const request = new NextRequest(`${API_URL}/agents/${mockAgent.handle}`, {
       method: 'DELETE',
     });
 
-    const response = await DELETE(request, { params: { id: mockAgent.id } });
+    const response = await DELETE(request, { params: { handle: mockAgent.handle } });
     const data = await response.json();
 
     expect(response.status).toBe(500);
