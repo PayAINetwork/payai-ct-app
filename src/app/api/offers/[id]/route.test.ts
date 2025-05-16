@@ -1,9 +1,9 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { GET } from './route';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // Mock dependencies
-jest.mock('@/lib/supabase', () => ({
+jest.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: jest.fn(),
 }));
 

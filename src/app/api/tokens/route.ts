@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
 import { hashToken } from '@/lib/auth';
