@@ -18,7 +18,7 @@ export const createServerSupabaseClient = async () => {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
               );
-            } catch (error) {
+            } catch {
               // The `set` method was called from a Server Component.
               // We can ignore this error since we have middleware refreshing
               // user sessions.
