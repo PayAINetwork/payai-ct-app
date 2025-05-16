@@ -10,10 +10,11 @@ export async function GET(request: Request) {
     
     // Exchange the code for a session
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    
+    console.log("isError", error)
+
     if (!error) {
       // Redirect to the home page after successful authentication
-      return NextResponse.redirect(new URL('/', requestUrl.origin))
+      return NextResponse.redirect(new URL('/account', requestUrl.origin))
     }
   }
 
