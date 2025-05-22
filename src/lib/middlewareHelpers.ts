@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { hashToken } from '@/lib/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
 
 /**
  * Handles API-key (Bearer token) authentication.
@@ -19,20 +19,15 @@ export async function handleBearerAuth(request: NextRequest): Promise<NextRespon
 
   // get the raw token and hash it
   const rawToken = authHeader.split(' ')[1];
-  console.log("rawToken", rawToken)
   const hashedToken = await hashToken(rawToken);
-  console.log("hashedToken", hashedToken)
 
   // look up the hashed token in the database
-  const supabase = await createServerSupabaseClient();
+  const supabase = createServiceRoleSupabaseClient();
   const { data: tokenData, error } = await supabase
     .from('access_tokens')
     .select('user_id, token_hash, expires_at, revoked_at')
     .eq('token_hash', hashedToken)
     .single();
-
-  console.log("tokenData", tokenData)
-  console.log("error", error)
 
   // if the token is not found, return a 401
   if (error || !tokenData) {
