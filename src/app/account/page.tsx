@@ -248,7 +248,7 @@ export default function AccountPage() {
                 <DialogHeader>
                   <DialogTitle>Access Token Created</DialogTitle>
                   <DialogDescription>
-                    Make sure to <b>copy your token now</b>. You won't be able to see it again after you close this window.
+                    Make sure to <b>copy your token now</b>. You won&apos;t be able to see it again after you close this window.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
