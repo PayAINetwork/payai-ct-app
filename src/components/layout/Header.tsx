@@ -1,10 +1,54 @@
 import React from 'react';
 import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 
-export function Header() {
+interface HeaderUser {
+  displayName?: string;
+  avatarUrl?: string;
+  email?: string;
+}
+
+export function Header({ user }: { user?: HeaderUser }) {
+  // Compute initials for fallback
+  let initials = 'U';
+  if (user) {
+    if (user.displayName) {
+      const parts = user.displayName.trim().split(' ');
+      if (parts.length > 1) {
+        initials = parts[0][0] + parts[1][0];
+      } else {
+        initials = parts[0][0];
+      }
+    } else if (user.email) {
+      initials = user.email[0];
+    }
+  }
+  const router = useRouter();
+
+  const handleAccount = useCallback(() => {
+    router.push("/account");
+  }, [router]);
+
+  const handleLogout = useCallback(async () => {
+    const supabase = createBrowserSupabaseClient();
+    await supabase.auth.signOut();
+    router.push('/');
+  }, [router]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-20 items-center justify-between pl-8">
+      <div className="container flex h-20 items-center justify-between pl-8 pr-8">
         <div className="flex items-center gap-4">
           <Image
             src="/payai-logo.svg"
@@ -17,6 +61,25 @@ export function Header() {
             <span className="text-2xl font-semibold">PayAI</span>
             <span className="text-sm text-muted-foreground">Hire any agent for any task</span>
           </div>
+        </div>
+
+        {/* Profile Button (Avatar) with Dropdown */}
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Account">
+                <Avatar>
+                  <AvatarImage src={user?.avatarUrl || "/placeholder-avatar.png"} alt="User avatar" />
+                  <AvatarFallback>{initials.toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleAccount}>Account</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { verifyToken } from '@/lib/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { hashToken } from '@/lib/auth';
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
 
 /**
  * Handles API-key (Bearer token) authentication.
@@ -17,17 +17,20 @@ export async function handleBearerAuth(request: NextRequest): Promise<NextRespon
     return null;
   }
 
-  // look up the token in the database
+  // get the raw token and hash it
   const rawToken = authHeader.split(' ')[1];
-  const supabase = await createServerSupabaseClient();
+  const hashedToken = await hashToken(rawToken);
+
+  // look up the hashed token in the database
+  const supabase = createServiceRoleSupabaseClient();
   const { data: tokenData, error } = await supabase
     .from('access_tokens')
-    .select('user_id, token, expires_at, revoked_at')
-    .eq('token', rawToken)
+    .select('user_id, token_hash, expires_at, revoked_at')
+    .eq('token_hash', hashedToken)
     .single();
 
-  // if the token is not found or the token is invalid, return a 401
-  if (error || !tokenData || !verifyToken(rawToken, tokenData.token)) {
+  // if the token is not found, return a 401
+  if (error || !tokenData) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
 

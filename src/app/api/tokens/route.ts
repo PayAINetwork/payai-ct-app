@@ -7,7 +7,6 @@ import { hashToken } from '@/lib/auth';
 // Schema for token creation request
 const createTokenSchema = z.object({
   name: z.string().min(1).max(50),
-  expiresIn: z.number().min(1).max(365).default(30), // days
 });
 
 export async function POST(request: Request) {
@@ -33,20 +32,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, expiresIn } = result.data;
+    const { name } = result.data;
 
     // Generate a secure random token
     const rawToken = randomBytes(32).toString('hex');
-    const hashedToken = hashToken(rawToken);
+    const hashedToken = await hashToken(rawToken);
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + expiresIn);
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
     // Store the hashed token in the database
     const { error: insertError } = await supabase
       .from('access_tokens')
       .insert({
         user_id: user.id,
-        token: hashedToken,
+        token_hash: hashedToken,
         name,
         created_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString(),

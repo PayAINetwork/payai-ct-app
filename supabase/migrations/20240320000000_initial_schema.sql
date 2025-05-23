@@ -1,6 +1,5 @@
 -- Create enum types
 CREATE TYPE job_status AS ENUM ('created', 'funded', 'started', 'delivered', 'completed', 'cancelled');
-CREATE TYPE token_status AS ENUM ('active', 'revoked');
 
 -- Create users table (extends Supabase auth)
 CREATE TABLE IF NOT EXISTS users (
@@ -74,9 +73,7 @@ CREATE TABLE IF NOT EXISTS access_tokens (
     user_id UUID REFERENCES users(id) NOT NULL,
     token_hash TEXT NOT NULL,
     name TEXT NOT NULL,
-    status token_status DEFAULT 'active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-    last_used_at TIMESTAMP WITH TIME ZONE,
     expires_at TIMESTAMP WITH TIME ZONE,
     revoked_at TIMESTAMP WITH TIME ZONE
 );

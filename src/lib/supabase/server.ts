@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createClient } from '@supabase/supabase-js';
 
 // Create a server-side Supabase client
 export const createServerSupabaseClient = async () => {
@@ -27,4 +28,14 @@ export const createServerSupabaseClient = async () => {
         },
       }
     );
-  }; 
+  };
+
+// Create a Supabase client using the service role key (bypasses RLS)
+// WARNING: This should be used sparingly and only in special cases
+// never expose the SUPABASE_SERVICE_ROLE_KEY in the client bundle
+export const createServiceRoleSupabaseClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}; 
