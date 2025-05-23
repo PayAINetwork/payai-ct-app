@@ -6,6 +6,7 @@ import { getTwitterUserByHandle } from '@/lib/twitter';
 // Mock dependencies
 jest.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: jest.fn(),
+  createServiceRoleSupabaseClient: jest.fn(),
 }));
 
 jest.mock('@/lib/twitter', () => ({
@@ -58,6 +59,7 @@ describe('POST /api/agents/[handle]/offers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (createServerSupabaseClient as any).mockReturnValue(mockSupabase);
+    (require('@/lib/supabase/server').createServiceRoleSupabaseClient as any).mockReturnValue(mockSupabase);
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
   });
 
@@ -95,12 +97,10 @@ describe('POST /api/agents/[handle]/offers', () => {
     });
 
     // Mock transaction functions
-    mockSupabase.rpc.mockImplementation((fn: string) => {
-      if (fn === 'begin_transaction') {
-        return Promise.resolve({ error: null });
-      }
-      if (fn === 'commit_transaction') {
-        return Promise.resolve({ error: null });
+    mockSupabase.rpc.mockImplementation((fn: string, args?: any) => {
+
+      if (fn === 'create_offer_and_job') {
+        return Promise.resolve({ data: [{ job_id: mockJob.id, offer_id: mockOffer.id }], error: null });
       }
       return Promise.resolve({ error: null });
     });
@@ -114,7 +114,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       }),
     });
 
-    const response = await POST(request, { params: { handle: 'testagent' } });
+    const response = await POST(request, { params: Promise.resolve({ handle: 'testagent' }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -172,12 +172,15 @@ describe('POST /api/agents/[handle]/offers', () => {
     });
 
     // Mock transaction functions
-    mockSupabase.rpc.mockImplementation((fn: string) => {
+    mockSupabase.rpc.mockImplementation((fn: string, args?: any) => {
       if (fn === 'begin_transaction') {
         return Promise.resolve({ error: null });
       }
       if (fn === 'commit_transaction') {
         return Promise.resolve({ error: null });
+      }
+      if (fn === 'create_offer_and_job') {
+        return Promise.resolve({ data: [{ job_id: mockJob.id, offer_id: mockOffer.id }], error: null });
       }
       return Promise.resolve({ error: null });
     });
@@ -191,7 +194,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       }),
     });
 
-    const response = await POST(request, { params: { handle: 'newagent' } });
+    const response = await POST(request, { params: Promise.resolve({ handle: 'newagent' }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -200,125 +203,6 @@ describe('POST /api/agents/[handle]/offers', () => {
       offer_id: mockOffer.id,
       job_id: mockJob.id,
     });
-  });
-
-  it('should rollback transaction if offer creation fails', async () => {
-    // Mock existing agent
-    mockSupabase.from.mockImplementation((table: string) => {
-      if (table === 'agents') {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: () => Promise.resolve({ data: mockAgent, error: null }),
-            }),
-          }),
-        };
-      }
-      if (table === 'offers') {
-        return {
-          insert: () => ({
-            select: () => ({
-              single: () => Promise.resolve({ data: null, error: new Error('Failed to create offer') }),
-            }),
-          }),
-        };
-      }
-      return {
-        insert: () => ({
-          select: () => ({
-            single: () => Promise.resolve({ data: mockJob, error: null }),
-          }),
-        }),
-      };
-    });
-
-    // Mock transaction functions
-    mockSupabase.rpc.mockImplementation((fn: string) => {
-      if (fn === 'begin_transaction') {
-        return Promise.resolve({ error: null });
-      }
-      if (fn === 'rollback_transaction') {
-        return Promise.resolve({ error: null });
-      }
-      return Promise.resolve({ error: null });
-    });
-
-    const request = new Request(`${API_URL}/agents/testagent/offers`, {
-      method: 'POST',
-      body: JSON.stringify({
-        amount: 100,
-        currency: 'SOL',
-        description: 'Test offer',
-      }),
-    });
-
-    const response = await POST(request, { params: { handle: 'testagent' } });
-    const data = await response.json();
-
-    expect(response.status).toBe(500);
-    expect(data.error).toBe('Failed to create offer and job');
-    expect(mockSupabase.rpc).toHaveBeenCalledWith('rollback_transaction');
-  });
-
-  it('should rollback transaction if job creation fails', async () => {
-    // Mock existing agent
-    mockSupabase.from.mockImplementation((table: string) => {
-      if (table === 'agents') {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: () => Promise.resolve({ data: mockAgent, error: null }),
-            }),
-          }),
-        };
-      }
-      if (table === 'offers') {
-        return {
-          insert: () => ({
-            select: () => ({
-              single: () => Promise.resolve({ data: mockOffer, error: null }),
-            }),
-          }),
-        };
-      }
-      if (table === 'jobs') {
-        return {
-          insert: () => ({
-            select: () => ({
-              single: () => Promise.resolve({ data: null, error: new Error('Failed to create job') }),
-            }),
-          }),
-        };
-      }
-      return {};
-    });
-
-    // Mock transaction functions
-    mockSupabase.rpc.mockImplementation((fn: string) => {
-      if (fn === 'begin_transaction') {
-        return Promise.resolve({ error: null });
-      }
-      if (fn === 'rollback_transaction') {
-        return Promise.resolve({ error: null });
-      }
-      return Promise.resolve({ error: null });
-    });
-
-    const request = new Request(`${API_URL}/agents/testagent/offers`, {
-      method: 'POST',
-      body: JSON.stringify({
-        amount: 100,
-        currency: 'SOL',
-        description: 'Test offer',
-      }),
-    });
-
-    const response = await POST(request, { params: { handle: 'testagent' } });
-    const data = await response.json();
-
-    expect(response.status).toBe(500);
-    expect(data.error).toBe('Failed to create offer and job');
-    expect(mockSupabase.rpc).toHaveBeenCalledWith('rollback_transaction');
   });
 
   it('should handle Twitter API errors for new agent creation', async () => {
@@ -343,7 +227,7 @@ describe('POST /api/agents/[handle]/offers', () => {
       }),
     });
 
-    const response = await POST(request, { params: { handle: 'nonexistent' } });
+    const response = await POST(request, { params: Promise.resolve({ handle: 'nonexistent' }) });
     const data = await response.json();
 
     expect(response.status).toBe(404);
