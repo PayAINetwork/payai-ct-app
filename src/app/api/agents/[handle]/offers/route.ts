@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleSupabaseClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { getTwitterUserByHandle } from '@/lib/twitter';
+import { getAuthenticatedUserOrError } from '@/lib/auth';
 
 // Schema for offer creation
 const createOfferSchema = z.object({
@@ -15,11 +16,9 @@ export async function POST(
   context: { params: Promise<{ handle: string }> }
 ) {
   try {
-    const supabase = await createServerSupabaseClient();
-    
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    // get the authenticated user or return 401
+    const { user, error } = await getAuthenticatedUserOrError(request);
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -40,6 +39,7 @@ export async function POST(
     const { handle } = await context.params;
 
     // Check if agent exists
+    const supabase = await createServerSupabaseClient();
     const { data: existingAgent } = await supabase
       .from('agents')
       .select('id')
@@ -53,9 +53,9 @@ export async function POST(
       try {
         // Fetch Twitter profile data
         const twitterData = await getTwitterUserByHandle(handle);
-        
         // Create the agent
-        const { data: newAgent, error: insertError } = await supabase
+        const supabaseServiceRole = createServiceRoleSupabaseClient();
+        const { data: newAgent, error: insertError } = await supabaseServiceRole
           .from('agents')
           .insert({
             handle,
@@ -70,7 +70,6 @@ export async function POST(
           })
           .select('id')
           .single();
-          
         if (insertError) {
           console.error('Error creating agent:', insertError);
           return NextResponse.json(
@@ -97,82 +96,33 @@ export async function POST(
       agentId = existingAgent.id;
     }
 
-    // Begin transaction for offer and job creation
-    const { error: beginError } = await supabase.rpc('begin_transaction');
-    if (beginError) {
-      console.error('Error beginning transaction:', beginError);
-      return NextResponse.json(
-        { error: 'Failed to begin transaction' },
-        { status: 500 }
-      );
-    }
+    const { data, error: createOfferError } = await supabase.rpc(
+      'create_offer_and_job', {
+        p_seller_id: agentId,
+        p_buyer_id: user.id,
+        p_amount: amount,
+        p_currency: currency,
+        p_description: description,
+        p_created_by: user.id
+      }
+    );
 
-    try {
-      // Create offer
-      const { data: offer, error: offerError } = await supabase
-        .from('offers')
-        .insert({
-          seller_id: agentId,
-          buyer_id: user.id,
-          amount,
-          currency,
-          description,
-          status: 'created',
-          created_by: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
-        
-      if (offerError) {
-        // Rollback transaction
-        await supabase.rpc('rollback_transaction');
-        throw offerError;
-      }
-      
-      // Create job
-      const { data: job, error: jobError } = await supabase
-        .from('jobs')
-        .insert({
-          offer_id: offer.id,
-          seller_id: agentId,
-          buyer_id: user.id,
-          status: 'created',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
-        
-      if (jobError) {
-        // Rollback transaction
-        await supabase.rpc('rollback_transaction');
-        throw jobError;
-      }
-
-      // Commit transaction
-      const { error: commitError } = await supabase.rpc('commit_transaction');
-      if (commitError) {
-        // Rollback transaction
-        await supabase.rpc('rollback_transaction');
-        throw commitError;
-      }
-      
-      return NextResponse.json({
-        agent_id: agentId,
-        offer_id: offer.id,
-        job_id: job.id
-      });
-    } catch (error) {
-      // Rollback transaction
-      await supabase.rpc('rollback_transaction');
-      console.error('Error in offer/job creation:', error);
+    if (createOfferError) {
+      console.error('Error creating offer and job:', createOfferError);
       return NextResponse.json(
         { error: 'Failed to create offer and job' },
         { status: 500 }
       );
     }
+
+    return NextResponse.json({
+      agent_id: agentId,
+      job_id: data[0].job_id,
+      offer_id: data[0].offer_id,
+    },
+    { status: 200 }
+    );
+    
   } catch (error) {
     console.error('Error in offer creation:', error);
     return NextResponse.json(

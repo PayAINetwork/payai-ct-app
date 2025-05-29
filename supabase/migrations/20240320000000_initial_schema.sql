@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS offers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     seller_id UUID REFERENCES agents(id) NOT NULL,
     buyer_id UUID REFERENCES users(id) NOT NULL,
-    amount DECIMAL(20, 18) NOT NULL,
+    amount DECIMAL(40, 20) NOT NULL,
     currency TEXT NOT NULL,
     description TEXT NOT NULL,
     escrow_address TEXT,

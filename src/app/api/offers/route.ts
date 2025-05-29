@@ -31,16 +31,12 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         seller:agents!offers_seller_id_fkey (
-          id,
-          handle,
-          name,
-          profile_image_url
+          id
         ),
         buyer:users!offers_buyer_id_fkey (
-          id,
-          email
+          id
         ),
-        job:jobs!offers_id_fkey (
+        job:jobs!jobs_offer_id_fkey (
           id,
           status
         )
