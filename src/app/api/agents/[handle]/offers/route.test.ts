@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { POST } from './route';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleSupabaseClient } from '@/lib/supabase/server';
 import { getTwitterUserByHandle } from '@/lib/twitter';
 
 // Mock dependencies
@@ -59,7 +59,7 @@ describe('POST /api/agents/[handle]/offers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (createServerSupabaseClient as any).mockReturnValue(mockSupabase);
-    (require('@/lib/supabase/server').createServiceRoleSupabaseClient as any).mockReturnValue(mockSupabase);
+    (createServiceRoleSupabaseClient as any).mockReturnValue(mockSupabase);
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
   });
 
@@ -97,7 +97,7 @@ describe('POST /api/agents/[handle]/offers', () => {
     });
 
     // Mock transaction functions
-    mockSupabase.rpc.mockImplementation((fn: string, args?: any) => {
+    mockSupabase.rpc.mockImplementation((fn: string) => {
 
       if (fn === 'create_offer_and_job') {
         return Promise.resolve({ data: [{ job_id: mockJob.id, offer_id: mockOffer.id }], error: null });
@@ -172,13 +172,7 @@ describe('POST /api/agents/[handle]/offers', () => {
     });
 
     // Mock transaction functions
-    mockSupabase.rpc.mockImplementation((fn: string, args?: any) => {
-      if (fn === 'begin_transaction') {
-        return Promise.resolve({ error: null });
-      }
-      if (fn === 'commit_transaction') {
-        return Promise.resolve({ error: null });
-      }
+    mockSupabase.rpc.mockImplementation((fn: string) => {
       if (fn === 'create_offer_and_job') {
         return Promise.resolve({ data: [{ job_id: mockJob.id, offer_id: mockOffer.id }], error: null });
       }
@@ -233,6 +227,6 @@ describe('POST /api/agents/[handle]/offers', () => {
     expect(response.status).toBe(404);
     expect(data.error).toBe('Twitter user not found');
     // Verify no transaction was started
-    expect(mockSupabase.rpc).not.toHaveBeenCalledWith('begin_transaction');
+    expect(mockSupabase.rpc).not.toHaveBeenCalled();
   });
 }); 
