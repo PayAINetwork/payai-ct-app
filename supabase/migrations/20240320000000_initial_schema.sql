@@ -3,7 +3,12 @@ CREATE TYPE job_status AS ENUM ('created', 'funded', 'started', 'delivered', 'co
 
 -- Create users table (extends Supabase auth)
 CREATE TABLE IF NOT EXISTS users (
-    id UUID REFERENCES auth.users(id) PRIMARY KEY,
+    id UUID not null REFERENCES auth.users(id) on delete cascade PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    picture TEXT,
+    avatar_url TEXT,
+    handle TEXT UNIQUE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -14,14 +19,11 @@ CREATE TABLE IF NOT EXISTS agents (
     user_id UUID REFERENCES users(id),
     handle TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
-    bio TEXT,
-    profile_image_url TEXT,
+    avatar_url TEXT,
     twitter_user_id TEXT UNIQUE,
-    twitter_handle TEXT UNIQUE,
+    bio TEXT,
     is_verified BOOLEAN DEFAULT false,
     verification_date TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id)
 );
@@ -44,7 +46,7 @@ CREATE TABLE IF NOT EXISTS offers (
 
 -- Create jobs table
 CREATE TABLE IF NOT EXISTS jobs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id SERIAL PRIMARY KEY,
     offer_id UUID REFERENCES offers(id) NOT NULL,
     seller_id UUID REFERENCES agents(id) NOT NULL,
     buyer_id UUID REFERENCES users(id) NOT NULL,
@@ -60,7 +62,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 -- Create reviews table
 CREATE TABLE IF NOT EXISTS reviews (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    job_id UUID REFERENCES jobs(id) NOT NULL,
+    job_id INTEGER REFERENCES jobs(id) NOT NULL,
     rating INTEGER CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
@@ -81,7 +83,6 @@ CREATE TABLE IF NOT EXISTS access_tokens (
 -- Create indexes
 CREATE INDEX idx_agents_user_id ON agents(user_id);
 CREATE INDEX idx_agents_handle ON agents(handle);
-CREATE INDEX idx_agents_twitter_handle ON agents(twitter_handle);
 CREATE INDEX idx_offers_seller_id ON offers(seller_id);
 CREATE INDEX idx_offers_buyer_id ON offers(buyer_id);
 CREATE INDEX idx_jobs_offer_id ON jobs(offer_id);
@@ -210,4 +211,71 @@ CREATE TRIGGER update_offers_updated_at
 CREATE TRIGGER update_jobs_updated_at
     BEFORE UPDATE ON jobs
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column(); 
+    EXECUTE FUNCTION update_updated_at_column();
+
+
+-- Create_offer_and_job function to create an offer and a job atomically
+CREATE OR REPLACE FUNCTION public.create_offer_and_job(
+  p_seller_id   UUID,
+  p_buyer_id    UUID,
+  p_amount      NUMERIC,
+  p_currency    TEXT,
+  p_description TEXT,
+  p_created_by  UUID
+)
+RETURNS TABLE (offer_id UUID, job_id INTEGER)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- 1) Insert into offers
+  INSERT INTO offers (
+    seller_id, buyer_id, amount, currency,
+    description, status, created_by,
+    created_at, updated_at
+  )
+  VALUES (
+    p_seller_id, p_buyer_id, p_amount, p_currency,
+    p_description, 'created', p_created_by,
+    now(), now()
+  )
+  RETURNING id INTO offer_id;  -- capture new offer ID
+
+  -- 2) Insert into jobs, referencing that offer
+  INSERT INTO jobs (
+    offer_id, seller_id, buyer_id,
+    status, created_at, updated_at
+  )
+  VALUES (
+    offer_id, p_seller_id, p_buyer_id,
+    'created', now(), now()
+  )
+  RETURNING id INTO job_id;    -- capture new job ID
+
+  -- 3) Return both IDs as a single row
+  RETURN NEXT;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.create_offer_and_job(
+  UUID, UUID, NUMERIC, TEXT, TEXT, UUID
+) TO authenticated; 
+
+-- create function to populate user data after oauth authentication with supabase
+create or replace function public.handle_new_auth_user()
+returns trigger as $$
+begin
+  insert into public.users (id, email, name, picture, avatar_url, handle, created_at, updated_at)
+  values (new.id, new.email, new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'picture', new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'user_name', new.created_at, new.updated_at)
+  on conflict do nothing;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- create trigger to call the function after insert on auth.users
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute procedure public.handle_new_auth_user(); 
+
+ALTER FUNCTION public.update_updated_at_column() SECURITY DEFINER SET search_path = public; 

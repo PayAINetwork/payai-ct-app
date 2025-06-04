@@ -47,26 +47,24 @@ export async function POST(
       .single();
 
     let agentId: string;
-    
-    // If agent doesn't exist, create it
+    const supabaseServiceRole = createServiceRoleSupabaseClient();
+
+    // If agent doesn't exist, create it with Twitter data and no user_id
     if (!existingAgent) {
       try {
         // Fetch Twitter profile data
         const twitterData = await getTwitterUserByHandle(handle);
-        // Create the agent
-        const supabaseServiceRole = createServiceRoleSupabaseClient();
+        // Create the agent (user_id is null, is_verified is false)
         const { data: newAgent, error: insertError } = await supabaseServiceRole
           .from('agents')
           .insert({
-            handle,
+            handle: handle,
             name: twitterData.name,
-            bio: twitterData.bio,
-            profile_image_url: twitterData.profileImage,
+            avatar_url: twitterData.profileImage,
             twitter_user_id: twitterData.twitterUserId,
+            bio: twitterData.bio,
             is_verified: false,
-            created_by: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_by: user.id
           })
           .select('id')
           .single();
@@ -77,7 +75,6 @@ export async function POST(
             { status: 500 }
           );
         }
-        
         agentId = newAgent.id;
       } catch (error) {
         console.error('Error creating agent:', error);

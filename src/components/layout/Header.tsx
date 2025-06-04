@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,28 @@ interface HeaderUser {
   email?: string;
 }
 
-export function Header({ user }: { user?: HeaderUser }) {
+export function Header() {
+  const [user, setUser] = useState<HeaderUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createBrowserSupabaseClient();
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      if (authUser) {
+        setUser({
+          displayName: authUser.user_metadata?.name,
+          avatarUrl: authUser.user_metadata?.avatar_url,
+          email: authUser.email,
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    };
+    fetchUser();
+  }, []);
+
   // Compute initials for fallback
   let initials = 'U';
   if (user) {
@@ -65,21 +86,30 @@ export function Header({ user }: { user?: HeaderUser }) {
 
         {/* Profile Button (Avatar) with Dropdown */}
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Account">
-                <Avatar>
-                  <AvatarImage src={user?.avatarUrl || "/placeholder-avatar.png"} alt="User avatar" />
-                  <AvatarFallback>{initials.toUpperCase()}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleAccount}>Account</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {loading ? (
+            <div className="animate-pulse w-10 h-10 rounded-full bg-muted" />
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Account">
+                  <Avatar>
+                    <AvatarImage src={user?.avatarUrl || "/placeholder-avatar.png"} alt="User avatar" />
+                    <AvatarFallback>{initials.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="px-4 py-2">
+                  <div className="font-medium">{user?.displayName}</div>
+                  <div className="text-xs text-muted-foreground">{user?.email}</div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleAccount}>Account</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>
