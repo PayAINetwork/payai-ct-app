@@ -4,7 +4,12 @@ import { z } from 'zod';
 
 // Input validation schema
 const paramsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1).refine((val) => {
+    // job id is a positive integer since it's auto-incrementing IDs
+    return /^\d+$/.test(val);
+  }, {
+    message: 'Invalid job ID'
+  }),
 });
 
 export async function GET(
@@ -18,7 +23,7 @@ export async function GET(
     
     // Create Supabase client
     const supabase = await createServerSupabaseClient();
-    
+
     // Fetch job with related data
     const { data: job, error } = await supabase
       .from('jobs')
@@ -28,11 +33,13 @@ export async function GET(
           id,
           handle,
           name,
-          profile_image_url
+          avatar_url
         ),
         buyer:users!jobs_buyer_id_fkey (
           id,
-          email
+          handle,
+          name,
+          avatar_url
         ),
         offer:offers!jobs_offer_id_fkey (
           id,
@@ -62,6 +69,8 @@ export async function GET(
     return NextResponse.json(job);
 
   } catch (error) {
+    console.error('Error in GET /api/jobs/[id]:', error);
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid job ID' },
@@ -69,7 +78,6 @@ export async function GET(
       );
     }
 
-    console.error('Unexpected error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch job' },
       { status: 500 }

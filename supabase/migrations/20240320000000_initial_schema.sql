@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS offers (
     currency TEXT NOT NULL,
     description TEXT NOT NULL,
     escrow_address TEXT,
-    status job_status DEFAULT 'created',
+    post_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     created_by UUID REFERENCES users(id),
@@ -115,8 +115,8 @@ CREATE POLICY "Agents can update their own data" ON agents
     FOR UPDATE USING (auth.uid() = user_id);
 
 -- Offers policies
-CREATE POLICY "Anyone can view active offers" ON offers
-    FOR SELECT USING (status != 'cancelled');
+CREATE POLICY "Anyone can view offers" ON offers
+    FOR SELECT USING (true);
 
 CREATE POLICY "Users can create offers" ON offers
     FOR INSERT WITH CHECK (auth.uid() = created_by);
@@ -221,6 +221,7 @@ CREATE OR REPLACE FUNCTION public.create_offer_and_job(
   p_amount      NUMERIC,
   p_currency    TEXT,
   p_description TEXT,
+  p_post_url    TEXT,
   p_created_by  UUID
 )
 RETURNS TABLE (offer_id UUID, job_id INTEGER)
@@ -231,12 +232,12 @@ BEGIN
   -- 1) Insert into offers
   INSERT INTO offers (
     seller_id, buyer_id, amount, currency,
-    description, status, created_by,
+    description, post_url, created_by,
     created_at, updated_at
   )
   VALUES (
     p_seller_id, p_buyer_id, p_amount, p_currency,
-    p_description, 'created', p_created_by,
+    p_description, p_post_url, p_created_by,
     now(), now()
   )
   RETURNING id INTO offer_id;  -- capture new offer ID
@@ -258,7 +259,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.create_offer_and_job(
-  UUID, UUID, NUMERIC, TEXT, TEXT, UUID
+  UUID, UUID, NUMERIC, TEXT, TEXT, TEXT, UUID
 ) TO authenticated; 
 
 -- create function to populate user data after oauth authentication with supabase

@@ -100,6 +100,7 @@ export async function POST(
         p_amount: amount,
         p_currency: currency,
         p_description: description,
+        p_post_url: "",
         p_created_by: user.id
       }
     );
