@@ -28,7 +28,7 @@ const mockPaymentLink = {
   userSpecifiedCurrency: 'PAYAI',
   amountSol: 0.002712,
   amountPayai: 1000,
-  status: 'Unfunded' as TimelineStatus,
+  status: 'created' as TimelineStatus,
   escrowAddress: 'w83QLKPfNrD5kcPeXxroi8wHgS7ENnUdHU5WJHcuPHa',
   buyerXName: 'Notorious D.E.V',
   buyerXHandle: 'notorious_d_e_v',
@@ -36,11 +36,11 @@ const mockPaymentLink = {
   buyerXStatusId: '1919956460995223634',
   buyerXProfileImage: 'https://pbs.twimg.com/profile_images/1894573079327567872/foVOWapl_400x400.jpg',
   statusTimestamps: {
-    Unfunded: '2023-07-01T12:00:00Z',
-    Funded: '2023-07-02T15:30:00Z',
-    Started: '',
-    Delivered: '',
-    Complete: ''
+    created: '2023-07-01T12:00:00Z',
+    funded: '2023-07-02T15:30:00Z',
+    started: '',
+    delivered: '',
+    completed: ''
   }
 };
 
@@ -55,11 +55,11 @@ const mockDelivery = {
 
 // Map status to visible section keys
 const statusToVisibleSections: Record<TimelineStatus, string[]> = {
-  Unfunded: ['Order Description', 'Unfunded'],
-  Funded: ['Order Description', 'Unfunded', 'Funded'],
-  Started: ['Order Description', 'Unfunded', 'Funded', 'Started'],
-  Delivered: ['Order Description', 'Unfunded', 'Funded', 'Started', 'Delivered'],
-  Complete: ['Order Description', 'Unfunded', 'Funded', 'Started', 'Delivered', 'Complete']
+  created: ['Order Description', 'created'],
+  funded: ['Order Description', 'created', 'funded'],
+  started: ['Order Description', 'created', 'funded', 'started'],
+  delivered: ['Order Description', 'created', 'funded', 'started', 'delivered'],
+  completed: ['Order Description', 'created', 'funded', 'started', 'delivered', 'completed']
 };
 
 export default function PaymentLinkPage() {
@@ -85,7 +85,7 @@ export default function PaymentLinkPage() {
         <div className="space-y-1">
           <div>{mockPaymentLink.buyerXName} hiring {agent?.name}</div>
           <div className="text-xs text-gray-500">
-            Created at {new Date(mockPaymentLink.statusTimestamps.Unfunded).toLocaleString()}
+            Created at {new Date(mockPaymentLink.statusTimestamps.created).toLocaleString()}
           </div>
         </div>
       ),
@@ -151,14 +151,14 @@ export default function PaymentLinkPage() {
       )
     },
     {
-      key: 'Unfunded',
+      key: 'created',
       title: 'Payment',
       summary: (
         <div className="space-y-1">
-          <div>{mockPaymentLink.status === 'Unfunded' ? 'Awaiting Payment' : mockPaymentLink.status}</div>
-          {mockPaymentLink.status !== 'Unfunded' && (
+          <div>{mockPaymentLink.status === 'created' ? 'Awaiting Payment' : mockPaymentLink.status}</div>
+          {mockPaymentLink.status !== 'created' && (
             <div className="text-xs text-gray-500">
-              Funded at {new Date(mockPaymentLink.statusTimestamps.Funded).toLocaleString()}
+              Funded at {new Date(mockPaymentLink.statusTimestamps.funded).toLocaleString()}
             </div>
           )}
         </div>
@@ -174,14 +174,14 @@ export default function PaymentLinkPage() {
       )
     },
     {
-      key: 'Funded',
+      key: 'funded',
       title: 'Awaiting Agent',
       summary: (
         <div className="space-y-1">
           <div>{agent?.name} - {agent?.status}</div>
-          {['Started','Delivered','Complete'].includes(mockPaymentLink.status) && (
+          {['started','delivered','completed'].includes(mockPaymentLink.status) && (
             <div className="text-xs text-gray-500">
-              Agent accepted at {new Date(mockPaymentLink.statusTimestamps.Started).toLocaleString()}
+              Agent accepted at {new Date(mockPaymentLink.statusTimestamps.started).toLocaleString()}
             </div>
           )}
         </div>
@@ -189,11 +189,11 @@ export default function PaymentLinkPage() {
       detail: <Button onClick={handleNotifyAgent}>Notify Agent</Button>
     },
     {
-      key: 'Started',
+      key: 'started',
       title: 'Job In Progress',
       summary: (
         <div className="text-sm text-gray-600">
-          Started at {new Date(mockPaymentLink.statusTimestamps.Started).toLocaleString()}
+          Started at {new Date(mockPaymentLink.statusTimestamps.started).toLocaleString()}
         </div>
       ),
       detail: (
@@ -207,16 +207,16 @@ export default function PaymentLinkPage() {
       )
     },
     {
-      key: 'Delivered',
+      key: 'delivered',
       title: 'Work Delivered',
       summary: (
         <div className="space-y-1">
           <a href={mockDelivery.deliverableUrl} target="_blank" rel="noopener noreferrer" className="underline">
             {mockDelivery.deliverableUrl.length > 20 ? mockDelivery.deliverableUrl.slice(0, 20) + '...' : mockDelivery.deliverableUrl}
           </a>
-          {['Delivered','Complete'].includes(mockPaymentLink.status) && (
+          {['delivered','completed'].includes(mockPaymentLink.status) && (
             <div className="text-xs text-gray-500">
-              Delivered at {new Date(mockPaymentLink.statusTimestamps.Delivered).toLocaleString()}
+              Delivered at {new Date(mockPaymentLink.statusTimestamps.delivered).toLocaleString()}
             </div>
           )}
         </div>
@@ -232,11 +232,11 @@ export default function PaymentLinkPage() {
       )
     },
     {
-      key: 'Complete',
+      key: 'completed',
       title: 'Job Complete',
       summary: (
         <div className="text-sm text-gray-600">
-          Completed at {new Date(mockPaymentLink.statusTimestamps.Complete).toLocaleString()}
+          Completed at {new Date(mockPaymentLink.statusTimestamps.completed).toLocaleString()}
         </div>
       ),
       detail: <p>Thank you! The job is complete.</p>

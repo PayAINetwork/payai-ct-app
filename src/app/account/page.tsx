@@ -195,7 +195,7 @@ export default function AccountPage() {
 
   return (
     <>
-      <Header user={user || undefined} />
+      <Header />
       <div className="container mx-auto p-4 space-y-6">
         {/* User Profile Section */}
         <Card>

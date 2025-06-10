@@ -1,13 +1,13 @@
 import React from 'react';
 
-export type TimelineStatus = 'Unfunded' | 'Funded' | 'Started' | 'Delivered' | 'Complete';
+export type TimelineStatus = 'created' | 'funded' | 'started' | 'delivered' | 'completed';
 
 export interface StatusTimelineProps {
   currentStatus: TimelineStatus;
   statusTimestamps: Record<TimelineStatus, string | Date>;
 }
 
-export const statuses: TimelineStatus[] = ['Unfunded', 'Funded', 'Started', 'Delivered', 'Complete'];
+export const statuses: TimelineStatus[] = ['created', 'funded', 'started', 'delivered', 'completed'];
 
 export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStatus, statusTimestamps }) => {
   const currentIndex = statuses.indexOf(currentStatus);

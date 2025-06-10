@@ -22,7 +22,7 @@ describe('GET /api/jobs/[id]', () => {
   };
 
   const mockJob = {
-    id: '123e4567-e89b-12d3-a456-426614174002',
+    id: '1',
     offer_id: '123e4567-e89b-12d3-a456-426614174003',
     seller_id: mockAgent.id,
     buyer_id: mockUser.id,
