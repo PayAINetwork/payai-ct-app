@@ -26,7 +26,7 @@ export function Header() {
   useEffect(() => {
     const fetchUser = async () => {
       const supabase = createBrowserSupabaseClient();
-      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         setUser({
           displayName: authUser.user_metadata?.name,

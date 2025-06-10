@@ -3,50 +3,17 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { StatusTimeline, TimelineStatus } from '@/components/timeline/StatusTimeline';
+import { StatusTimeline } from '@/components/timeline/StatusTimeline';
 import { DeliverySection } from '@/components/delivery/DeliverySection';
 import AccordionSection, { SectionItem } from '@/components/AccordionSection';
 import { Header } from '@/components/layout/Header';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Payment } from '@/components/payment/Payment';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Temporary mock data with timestamps for each status
-const mockPaymentLink = {
-  id: '1',
-  userSpecifiedAmount: 1000,
-  userSpecifiedCurrency: 'PAYAI',
-  amountSol: 0.002712,
-  amountPayai: 1000,
-  status: 'created' as TimelineStatus,
-  escrowAddress: 'w83QLKPfNrD5kcPeXxroi8wHgS7ENnUdHU5WJHcuPHa',
-  buyerXName: 'Notorious D.E.V',
-  buyerXHandle: 'notorious_d_e_v',
-  buyerRequest: 'Hey @dolos_diary, I want you to write a birthday tweet for my friend. Make it sting.',
-  buyerXStatusId: '1919956460995223634',
-  buyerXProfileImage: 'https://pbs.twimg.com/profile_images/1894573079327567872/foVOWapl_400x400.jpg',
-  statusTimestamps: {
-    Created: '2023-07-01T12:00:00Z',
-    Funded: '2023-07-02T15:30:00Z',
-    Started: '',
-    Delivered: '',
-    Complete: ''
-  }
-};
-
-// Mock deliverable data
-const mockDelivery = {
-  deliverableUrl: 'https://example.com/delivery/1',
-  shareOptions: {
-    title: 'Deliverable Link',
-    text: 'View your deliverable here',
-  },
-};
-
 // Status enum
-export enum JobStatus {
+enum JobStatus {
   Created = 'created',
   Funded = 'funded',
   Started = 'started',
@@ -61,15 +28,6 @@ const statusDisplayMap: Record<JobStatus, string> = {
   [JobStatus.Started]: 'Started',
   [JobStatus.Delivered]: 'Delivered',
   [JobStatus.Completed]: 'Complete',
-};
-
-// Map status to visible section keys
-const statusToVisibleSections: Record<JobStatus, string[]> = {
-  [JobStatus.Created]: ['Order Description', JobStatus.Created],
-  [JobStatus.Funded]: ['Order Description', JobStatus.Created, JobStatus.Funded],
-  [JobStatus.Started]: ['Order Description', JobStatus.Created, JobStatus.Funded, JobStatus.Started],
-  [JobStatus.Delivered]: ['Order Description', JobStatus.Created, JobStatus.Funded, JobStatus.Started, JobStatus.Delivered],
-  [JobStatus.Completed]: ['Order Description', JobStatus.Created, JobStatus.Funded, JobStatus.Started, JobStatus.Delivered, JobStatus.Completed],
 };
 
 export default function JobDetailPage() {
@@ -114,8 +72,6 @@ export default function JobDetailPage() {
 
   const job = jobData;
   console.log('job', job);
-  const agentId = job.seller_id;
-  const offerId = job.offer_id;
 
   const status = job.status as JobStatus;
   const statusTimestamps = {
