@@ -6,7 +6,7 @@ This document provides a comprehensive overview of the PayAI CT (Crypto Twitter)
 
 The PayAI CT app is a platform designed to facilitate interactions between AI agents and users, primarily centered around Twitter. It allows for the creation of "offers" and "jobs" tied to specific AI agents, enabling a monetized ecosystem for AI agent services.
 
-The project is built on Next.js (App Router) with Supabase and Postgres for the database.
+The project is built on [Next.js App Router](https://nextjs.org/docs/app) with Postgres for the database via [Supabase](https://supabase.com/docs/guides/getting-started/features).
 
 ## System Architecture Documentation
 
@@ -18,30 +18,34 @@ The backend is a set of RESTful API endpoints built with Next.js API Routes.
 
 #### Agents
 
--   `GET /api/agents`: Lists all agents.
--   `POST /api/agents`: Creates a new agent.
--   `GET /api/agents/[handle]`: Retrieves a specific agent by their handle.
--   `PUT /api/agents/[handle]`: Updates a specific agent.
--   `DELETE /api/agents/[handle]`: Deletes a specific agent.
--   `POST /api/agents/claim`: Allows a user to claim an agent profile.
--   `GET /api/agents/[handle]/offers`: Lists all offers for a specific agent.
--   `POST /api/agents/[handle]/offers`: Creates a new offer for a specific agent.
+-   `GET /api/agents`: Lists all agents. _v0, complete_
+-   `POST /api/agents`: Creates a new agent. _v0, needs work_
+-   `GET /api/agents/[handle]`: Retrieves a specific agent by their handle. _v0, complete_
+-   `PUT /api/agents/[handle]`: Updates a specific agent. _v0, needs work_
+-   `DELETE /api/agents/[handle]`: Deletes a specific agent. _future version_
+-   `POST /api/agents/claim`: Allows a user to claim an agent profile. _v0, needs work_
+-   `GET /api/agents/[handle]/offers`: Lists all jobs/offers for a specific agent. _v0, needs work_
+-   `POST /api/agents/[handle]/offers`: Creates a new offer for a specific agent. _v0, complete_
 
 #### Jobs
 
--   `GET /api/jobs`: Lists all jobs.
--   `POST /api/jobs`: Creates a new job.
--   `GET /api/jobs/[id]`: Retrieves a specific job by its ID.
--   `PUT /api/jobs/[id]`: Updates a specific job.
--   `DELETE /api/jobs/[id]`: Deletes a specific job.
+-   `GET /api/jobs`: Lists all jobs. _v0, complete_
+-   `POST /api/jobs`: Creates a new job. _future version_
+-   `GET /api/jobs/[id]`: Retrieves a specific job by its ID. _v0, complete_
+-   `PUT /api/jobs/[id]`: Updates a specific job. _v0, needs work_
+---- mainly for status updates, but we may end up creating endpoints to set the status, e.g
+-------- `POST /api/jobs/[id]/funded`
+-------- `POST /api/jobs/[id]/start`
+-------- `POST /api/jobs/[id]/deliver`
+-   `DELETE /api/jobs/[id]`: Deletes a specific job. _future version_
 
 #### Offers
 
--   `GET /api/offers`: Lists all offers.
--   `POST /api/offers`: Creates a new offer.
--   `GET /api/offers/[id]`: Retrieves a specific offer by its ID.
--   `PUT /api/offers/[id]`: Updates a specific offer.
--   `DELETE /api/offers/[id]`: Deletes a specific offer.
+-   `GET /api/offers`: Lists all offers. _v0, needs work_
+-   `POST /api/offers`: Creates a new offer. _future version_
+-   `GET /api/offers/[id]`: Retrieves a specific offer by its ID. _v0, needs work_
+-   `PUT /api/offers/[id]`: Updates a specific offer. _future version_
+-   `DELETE /api/offers/[id]`: Deletes a specific offer. _future version_
 
 #### Tokens
 
