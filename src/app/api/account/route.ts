@@ -11,20 +11,17 @@ export async function PUT(request: Request) {
     }
 
     // Get the user's Twitter handle from their auth metadata
-    const userMeta = user.user_metadata || {};
-    const twitterHandle = userMeta.user_name || userMeta.screen_name;
-    
+    const userMeta = user.user_metadata;
+    const twitterHandle = userMeta.user_name;
+
     if (!twitterHandle) {
       return NextResponse.json({ 
         error: 'Twitter handle not found. Please sign in with Twitter again.' 
       }, { status: 400 });
     }
-
-    // Fetch real Twitter profile data using direct HTTP request
-    const cleanHandle = twitterHandle.replace('@', '');
     
     const twitterResponse = await fetch(
-      `https://api.twitter.com/2/users/by/username/${cleanHandle}?user.fields=name,description,profile_image_url,id`,
+      `https://api.twitter.com/2/users/by/username/${twitterHandle}?user.fields=name,description,profile_image_url,id`,
       {
         headers: {
           'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
