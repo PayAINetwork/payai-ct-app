@@ -3,9 +3,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import Jobs from '@/components/jobs/Jobs';
 
 
 export default function JobsPage() {
@@ -14,7 +14,9 @@ export default function JobsPage() {
     queryFn: async () => {
       const res = await fetch('/api/jobs');
       if (!res.ok) throw new Error('Failed to fetch jobs');
+      console.log(data);
       return res.json();
+      
     }
   });
 
@@ -41,38 +43,14 @@ export default function JobsPage() {
             ))}
           </div>
         )}
-        {error && (
+        {/* Removed this for better clarity for the user and to declutter space. */}
+        {/* {error && (
           <div className="text-red-600">Error loading jobs: {error.message}</div>
-        )}
+        )} */}
         {data && data.jobs && data.jobs.length > 0 ? (
           <div className="space-y-6">
             {data.jobs.map((job: any) => (
-              <Card key={job.id} className="w-full max-w-2xl mx-auto">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={job.seller?.profile_image_url} alt={job.seller?.name} />
-                    <AvatarFallback>{job.seller?.name?.slice(0, 2).toUpperCase() || 'AG'}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold">{job.seller?.name || 'Agent'}</span>
-                    <span className="text-sm text-muted-foreground">@{job.seller?.handle}</span>
-                  </div>
-                  <div className="ml-auto">
-                    <span className="px-2 py-1 rounded bg-gray-200 text-xs font-medium">
-                      {job.status}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-2 text-lg font-medium">{job.offer?.description}</div>
-                  <div className="text-sm text-gray-600">
-                    Amount: {job.offer?.amount} {job.offer?.currency}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-2">
-                    Created: {new Date(job.created_at).toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
+              <Jobs job={job} />
             ))}
           </div>
         ) : (
