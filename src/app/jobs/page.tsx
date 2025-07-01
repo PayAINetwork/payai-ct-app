@@ -1,14 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Jobs from '@/components/jobs/Jobs';
-
+import { JobFilters, JobFilters as JobFiltersType } from '@/components/jobs/JobFilter/JobFilters';
+import { filterJobs } from '@/components/jobs/JobFilter/jobFilterUtils';
+import { CreateJobForm } from '@/components/jobs/CreateJobForm';
 
 export default function JobsPage() {
+  const [filters, setFilters] = useState<JobFiltersType>({});
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['jobs'],
     queryFn: async () => {
@@ -16,47 +20,72 @@ export default function JobsPage() {
       if (!res.ok) throw new Error('Failed to fetch jobs');
       console.log(data);
       return res.json();
-      
     }
   });
+
+  // Apply filters to jobs
+  const filteredJobs = useMemo(() => {
+    if (!data?.jobs) return [];
+    return filterJobs(data.jobs, filters);
+  }, [data?.jobs, filters]);
+
+  const handleFiltersChange = (newFilters: JobFiltersType) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">Job Listings</h1>
-        {isLoading && (
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i} className="w-full max-w-2xl mx-auto">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="flex flex-col gap-2 flex-1">
-                    <Skeleton className="h-6 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-        {/* Removed this for better clarity for the user and to declutter space. */}
-        {/* {error && (
-          <div className="text-red-600">Error loading jobs: {error.message}</div>
-        )} */}
-        {data && data.jobs && data.jobs.length > 0 ? (
-          <div className="space-y-6">
-            {data.jobs.map((job: any) => (
-              <Jobs job={job} />
-            ))}
-          </div>
-        ) : (
-          !isLoading && <div className="text-gray-600 text-center">No jobs found.</div>
-        )}
+      <div/>
+      <div className="flex flex-col md:flex-row">
+        {/* Empty left column for spacing on desktop/tablet */}
+        <div className="hidden md:block flex-1" />
+        
+        {/* Center column: filters and jobs */}
+        <div className="flex-1 order-2 md:order-1 p-4 container mx-auto overflow-y-auto">
+          <JobFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+          />
+          {isLoading && (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="w-full max-w-2xl mx-auto">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex flex-col gap-2 flex-1">
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          {filteredJobs.length > 0 ? (
+            <div className="space-y-6">
+              {filteredJobs.map((job: any) => (
+                <Jobs key={job.id} job={job} />
+              ))}
+            </div>
+          ) : (
+            !isLoading && <div className="text-gray-600 text-center">No jobs found.</div>
+          )}
+        </div>
+        
+        {/* Right column: create job form */}
+        <div className="flex-1 order-1 md:order-2 p-4 container mx-auto overflow-y-auto">
+          <CreateJobForm onSubmit={async (data) => { /* handle job creation here */ }} />
+        </div>
       </div>
     </div>
   );
-} 
+}
