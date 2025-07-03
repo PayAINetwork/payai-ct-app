@@ -1,15 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import Jobs from '@/components/jobs/Jobs';
+import { JobFilters, JobFilters as JobFiltersType } from '@/components/jobs/JobFilter/JobFilters';
+import { filterJobs } from '@/components/jobs/JobFilter/jobFilterUtils';
+import { CreateJobForm } from '@/components/jobs/CreateJobForm';
 
 export default function JobsPage() {
-  const { data, isLoading, error } = useQuery({
+  const [filters, setFilters] = useState<JobFiltersType>({});
+
+  const { data, isLoading } = useQuery({
     queryKey: ['jobs'],
     queryFn: async () => {
       const res = await fetch('/api/jobs');
@@ -18,67 +22,65 @@ export default function JobsPage() {
     }
   });
 
+  // Apply filters to jobs
+  const filteredJobs = useMemo(() => {
+    if (!data?.jobs) return [];
+    return filterJobs(data.jobs, filters);
+  }, [data?.jobs, filters]);
+
+  const handleFiltersChange = (newFilters: JobFiltersType) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">Job Listings</h1>
-        {isLoading && (
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i} className="w-full max-w-2xl mx-auto">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="flex flex-col gap-2 flex-1">
-                    <Skeleton className="h-6 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-        {error && (
-          <div className="text-red-600">Error loading jobs: {error.message}</div>
-        )}
-        {data && data.jobs && data.jobs.length > 0 ? (
-          <div className="space-y-6">
-            {data.jobs.map((job: any) => (
-              <Card key={job.id} className="w-full max-w-2xl mx-auto">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={job.seller?.profile_image_url} alt={job.seller?.name} />
-                    <AvatarFallback>{job.seller?.name?.slice(0, 2).toUpperCase() || 'AG'}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold">{job.seller?.name || 'Agent'}</span>
-                    <span className="text-sm text-muted-foreground">@{job.seller?.handle}</span>
-                  </div>
-                  <div className="ml-auto">
-                    <span className="px-2 py-1 rounded bg-gray-200 text-xs font-medium">
-                      {job.status}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-2 text-lg font-medium">{job.offer?.description}</div>
-                  <div className="text-sm text-gray-600">
-                    Amount: {job.offer?.amount} {job.offer?.currency}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-2">
-                    Created: {new Date(job.created_at).toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          !isLoading && <div className="text-gray-600 text-center">No jobs found.</div>
-        )}
+      <div/>
+      <div className="flex flex-col md:flex-row">
+        <div className="hidden md:block flex-1" />
+        <div className="flex-1 order-2 md:order-1 p-4 container mx-auto overflow-y-auto">
+          <JobFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+          />
+          {isLoading && (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="w-full max-w-2xl mx-auto">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex flex-col gap-2 flex-1">
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          {filteredJobs.length > 0 ? (
+            <div className="space-y-6">
+              {filteredJobs.map((job: any) => (
+                <Jobs key={job.id} job={job} />
+              ))}
+            </div>
+          ) : (
+            !isLoading && <div className="text-gray-600 text-center">No jobs found.</div>
+          )}
+        </div>
+        <div className="flex-1 order-1 md:order-2 p-4 container mx-auto overflow-y-auto">
+          {/* passing empty function since logic is dealt with inside the component itself */}
+          <CreateJobForm onSubmit={async () => {}} />
+        </div>
       </div>
     </div>
   );
-} 
+}

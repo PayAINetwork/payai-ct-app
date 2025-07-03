@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           id,
           handle,
           name,
-          profile_image_url
+          avatar_url
         ),
         buyer:users!jobs_buyer_id_fkey (
           id,
