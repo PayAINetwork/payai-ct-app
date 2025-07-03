@@ -65,7 +65,7 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
       if (!res.ok) {
         const message = 'Failed to create offer. Please try again.';
         try {
-          const data = await res.json();
+          await res.json();
         } catch {}
         throw new Error(message);
       }

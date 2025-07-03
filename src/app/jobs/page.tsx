@@ -13,12 +13,11 @@ import { CreateJobForm } from '@/components/jobs/CreateJobForm';
 export default function JobsPage() {
   const [filters, setFilters] = useState<JobFiltersType>({});
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['jobs'],
     queryFn: async () => {
       const res = await fetch('/api/jobs');
       if (!res.ok) throw new Error('Failed to fetch jobs');
-      console.log(data);
       return res.json();
     }
   });
@@ -42,10 +41,7 @@ export default function JobsPage() {
       <Header />
       <div/>
       <div className="flex flex-col md:flex-row">
-        {/* Empty left column for spacing on desktop/tablet */}
         <div className="hidden md:block flex-1" />
-        
-        {/* Center column: filters and jobs */}
         <div className="flex-1 order-2 md:order-1 p-4 container mx-auto overflow-y-auto">
           <JobFilters
             filters={filters}
@@ -80,10 +76,9 @@ export default function JobsPage() {
             !isLoading && <div className="text-gray-600 text-center">No jobs found.</div>
           )}
         </div>
-        
-        {/* Right column: create job form */}
         <div className="flex-1 order-1 md:order-2 p-4 container mx-auto overflow-y-auto">
-          <CreateJobForm onSubmit={async (data) => { /* handle job creation here */ }} />
+          {/* passing empty function since logic is dealt with inside the component itself */}
+          <CreateJobForm onSubmit={async () => {}} />
         </div>
       </div>
     </div>
