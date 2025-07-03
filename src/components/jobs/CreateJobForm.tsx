@@ -17,12 +17,10 @@ interface CreateJobFormData {
 
 interface CreateJobFormProps {
   onSubmit: (data: CreateJobFormData) => Promise<void>;
-  isLoading?: boolean;
 }
 
 export const CreateJobForm: React.FC<CreateJobFormProps> = ({
-  onSubmit,
-  isLoading = false
+  onSubmit
 }) => {
   const router = useRouter();
 
@@ -34,12 +32,15 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
   });
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof CreateJobFormData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    if (error) setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -47,8 +48,10 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
     if (!formData.agentHandle.trim() || !formData.description.trim() || formData.amount <= 0) {
       return;
     }
-    await onSubmit(formData);
+    setLoading(true);
+    setError(null);
     try {
+      await onSubmit(formData);
       const sanitizedHandle = formData.agentHandle.replace(/^@/, '');
       const res = await fetch(`/api/agents/${sanitizedHandle}/offers`, {
         method: 'POST',
@@ -60,12 +63,19 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
         }),
       });
       if (!res.ok) {
-        throw new Error('Failed to create agent');
+        const message = 'Failed to create offer. Please try again.';
+        try {
+          const data = await res.json();
+        } catch {}
+        throw new Error(message);
       }
       const data: { job_id: string } = await res.json();
       router.push(`/jobs/${data.job_id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating agent:', error);
+      setError(error?.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,6 +101,11 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
       
       {isExpanded && (
         <CardContent>
+          {error && (
+            <div className="mb-4 text-red-600 text-sm font-medium" role="alert">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Agent Name */}
             <div className="space-y-2">
@@ -101,6 +116,7 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
                 value={formData.agentHandle}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('agentHandle', e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
             {/* Amount and Currency */}
@@ -116,6 +132,7 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
                   value={formData.amount || ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -124,14 +141,14 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
                   <Badge
                     variant={formData.currency === 'PAYAI' ? "default" : "outline"}
                     className="cursor-pointer hover:bg-primary/10"
-                    onClick={() => handleInputChange('currency', 'PAYAI')}
+                    onClick={() => !loading && handleInputChange('currency', 'PAYAI')}
                   >
                     PAYAI
                   </Badge>
                   <Badge
                     variant={formData.currency === 'SOL' ? "default" : "outline"}
                     className="cursor-pointer hover:bg-primary/10"
-                    onClick={() => handleInputChange('currency', 'SOL')}
+                    onClick={() => !loading && handleInputChange('currency', 'SOL')}
                   >
                     SOL
                   </Badge>
@@ -149,6 +166,7 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
                 rows={4}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -156,10 +174,10 @@ export const CreateJobForm: React.FC<CreateJobFormProps> = ({
             <div className="flex justify-end pt-2">
               <Button
                 type="submit"
-                disabled={!isValid || isLoading}
+                disabled={!isValid || loading}
                 className="flex items-center gap-2"
               >
-                {isLoading ? (
+                {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Creating...
