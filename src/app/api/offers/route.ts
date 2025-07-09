@@ -18,12 +18,19 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const query = Object.fromEntries(searchParams.entries());
+    const showAll = searchParams.get('show_all') === 'true';
     
     // Validate query parameters
     const validatedQuery = querySchema.parse(query);
     
     // Create Supabase client
     const supabase = await createServerSupabaseClient();
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     
     // Build the query
     let queryBuilder = supabase
@@ -51,6 +58,11 @@ export async function GET(request: NextRequest) {
     }
     if (validatedQuery.buyer_id) {
       queryBuilder = queryBuilder.eq('buyer_id', validatedQuery.buyer_id);
+    }
+
+    // If not showAll, filter to offers where user is seller or buyer
+    if (!showAll) {
+      queryBuilder = queryBuilder.or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`);
     }
 
     // Apply sorting
