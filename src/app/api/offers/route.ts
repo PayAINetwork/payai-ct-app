@@ -36,16 +36,17 @@ export async function GET(request: NextRequest) {
     let queryBuilder = supabase
       .from('offers')
       .select(`
-        *,
-        seller:agents!offers_seller_id_fkey (
-          id
-        ),
-        buyer:users!offers_buyer_id_fkey (
-          id
-        ),
+        buyer_id,
+        currency,
+        amount,
+        description,
         job:jobs!jobs_offer_id_fkey (
           id,
-          status
+          status,
+          created_at
+        ),
+        buyer:users!offers_buyer_id_fkey (
+          name
         )
       `, { count: 'exact' });
 
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     // Execute query
     const { data: offers, error, count } = await queryBuilder;
-
+    
     if (error) {
       console.error('Error fetching offers:', error);
       return NextResponse.json(
@@ -86,9 +87,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Map offers to only include required fields
+    const mappedOffers = (offers || []).map((offer: any) => ({
+      job_id: offer.job[0].id,
+      buyer_name: offer.buyer.name,
+      status: offer.job[0].status,
+      created_at: offer.job[0].created_at,
+      currency: offer.currency,
+      amount: offer.amount,
+      description: offer.description,
+    }));
+
     // Return paginated response
     return NextResponse.json({
-      offers,
+      offers: mappedOffers,
       pagination: {
         total: count || 0,
         page: validatedQuery.page,

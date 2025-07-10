@@ -1,89 +1,82 @@
-import React from 'react';
+"use client";
+
+import React, { useState, useMemo } from "react";
+import { Header } from "@/components/layout/Header";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import OfferCard from "@/components/offers/OfferCard";
 
 interface Offer {
-  id: string;
-  status: string;
-  seller_id: string;
-  buyer_id: string;
-  job_id: string;
-  created_at: string;
+  job_id?: number | string;
+  buyer_name?: string;
+  currency?: string;
   amount?: number;
-  // Add more fields as needed
+  description?: string;
+  status?: string;
+  created_at?: string;
 }
 
-interface Pagination {
-  total: number;
-  page: number;
-  limit: number;
-  total_pages: number;
-}
-
-async function fetchOffers(page: number = 1) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/offers?page=${page}`,
-    { cache: 'no-store' }
-  );
-  if (!res.ok) throw new Error('Failed to fetch offers');
+async function fetchOffers() {
+  const res = await fetch(`/api/offers`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch offers");
   return res.json();
 }
 
-export default async function OffersPage({ searchParams }: { searchParams?: { page?: string } }) {
-  const page = Number(searchParams?.page) || 1;
-  let offers: Offer[] = [];
-  let pagination: Pagination = { total: 0, page, limit: 10, total_pages: 1 };
-  let error = '';
-  try {
-    const data = await fetchOffers(page);
-    offers = data.offers;
-    pagination = data.pagination;
-  } catch (e: any) {
-    error = e.message;
-  }
+export default function OffersPage() {
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    fetchOffers()
+      .then((data) => {
+        setOffers(data.offers || []);
+        setIsLoading(false);
+      })
+      .catch((e) => {
+        setError(e.message);
+        setIsLoading(false);
+      });
+  }, []);
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
-      <h1>Offers</h1>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
-        <thead>
-          <tr>
-            <th style={{ border: '1px solid #ccc', padding: 8 }}>ID</th>
-            <th style={{ border: '1px solid #ccc', padding: 8 }}>Status</th>
-            <th style={{ border: '1px solid #ccc', padding: 8 }}>Seller</th>
-            <th style={{ border: '1px solid #ccc', padding: 8 }}>Buyer</th>
-            <th style={{ border: '1px solid #ccc', padding: 8 }}>Job</th>
-            <th style={{ border: '1px solid #ccc', padding: 8 }}>Created</th>
-          </tr>
-        </thead>
-          <tbody>
-            {offers.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 16 }}>No offers found.</td></tr>
-            )}
-          {offers.map(offer => (
-            <tr key={offer.id}>
-              <td style={{ border: '1px solid #ccc', padding: 8 }}>{offer.id}</td>
-              <td style={{ border: '1px solid #ccc', padding: 8 }}>{offer.status}</td>
-              <td style={{ border: '1px solid #ccc', padding: 8 }}>{offer.seller_id}</td>
-              <td style={{ border: '1px solid #ccc', padding: 8 }}>{offer.buyer_id}</td>
-              <td style={{ border: '1px solid #ccc', padding: 8 }}>{offer.job_id}</td>
-              <td style={{ border: '1px solid #ccc', padding: 8 }}>{new Date(offer.created_at).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 16 }}>
-        <a
-          href={`?page=${Math.max(1, pagination.page - 1)}`}
-          style={{ pointerEvents: pagination.page === 1 ? 'none' : undefined, color: pagination.page === 1 ? '#ccc' : '#0070f3' }}
-        >
-          Previous
-        </a>
-        <span>Page {pagination.page} of {pagination.total_pages}</span>
-        <a
-          href={`?page=${Math.min(pagination.total_pages, pagination.page + 1)}`}
-          style={{ pointerEvents: pagination.page === pagination.total_pages ? 'none' : undefined, color: pagination.page === pagination.total_pages ? '#ccc' : '#0070f3' }}
-        >
-          Next
-        </a>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="flex flex-col md:flex-row">
+        <div className="hidden md:block flex-1" />
+        <div className="flex-1 order-2 md:order-1 p-4 container mx-auto overflow-y-auto">
+          <h1 className="text-2xl font-bold mb-4">Offers</h1>
+          {error && <div className="text-red-500 mb-4">{error}</div>}
+          {isLoading && (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="w-full max-w-2xl mx-auto">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex flex-col gap-2 flex-1">
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          {offers.length > 0 ? (
+            <div className="space-y-6">
+              {offers.map((offer: Offer, i: number) => (
+                <OfferCard key={i} offer={offer} />
+              ))}
+            </div>
+          ) : (
+            !isLoading && <div className="text-gray-600 text-center">No offers found.</div>
+          )}
+        </div>
+        <div className="flex-1 order-1 md:order-2 p-4 container mx-auto overflow-y-auto" />
       </div>
     </div>
   );
