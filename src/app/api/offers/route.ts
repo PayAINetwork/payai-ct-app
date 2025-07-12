@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       currency: offer.currency,
       amount: offer.amount,
       description: offer.description,
-    })).filter(offer => offer.job_id !== null); // Filter out offers without valid job data
+    })).filter(offer => offer.job_id !== null);
 
     // Return paginated response
     return NextResponse.json({

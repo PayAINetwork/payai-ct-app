@@ -66,7 +66,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, loading = false }) => {
           <div className="text-xs text-gray-400 mt-2">
             Created: {offer.created_at ? new Date(offer.created_at).toLocaleString() : ''}
           </div>
-          {offer.status && offer.status !== 'created' && (
+          {offer.escrow_address && (
             <div className="mt-4">
               <Button 
                 variant="outline" 
