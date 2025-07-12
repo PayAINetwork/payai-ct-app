@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface OfferCardProps {
   offer: {
@@ -18,10 +20,21 @@ interface OfferCardProps {
 }
 
 const OfferCard: React.FC<OfferCardProps> = ({ offer, loading = false }) => {
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const handleCardClick = () => {
+    if (offer.job_id && !loading && !isNavigating) {
+      setIsNavigating(true);
+      router.push(`/jobs/${offer.job_id}`);
+    }
+  };
+
   return (
     <div className="relative">
       <Card
-        className={`w-full max-w-2xl mx-auto cursor-pointer transition-opacity ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+        className={`w-full max-w-2xl mx-auto cursor-pointer transition-opacity ${loading || isNavigating ? 'opacity-50 pointer-events-none' : ''}`}
+        onClick={handleCardClick}
       >
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -53,12 +66,15 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, loading = false }) => {
           <div className="text-xs text-gray-400 mt-2">
             Created: {offer.created_at ? new Date(offer.created_at).toLocaleString() : ''}
           </div>
-          {offer.status && offer.status !== 'started' && (
+          {offer.status && offer.status !== 'created' && (
             <div className="mt-4">
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => window.open(offer.escrow_address, '_blank')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(offer.escrow_address, '_blank');
+                }}
                 className="w-full"
               >
                 View Escrow Listing
@@ -67,7 +83,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, loading = false }) => {
           )}
         </CardContent>
       </Card>
-      {loading && (
+      {(loading || isNavigating) && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
           <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
         </div>
