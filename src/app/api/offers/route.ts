@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
       .from('offers')
       .select(`
         buyer_id,
+        escrow_address,
         currency,
         amount,
         description,
@@ -91,6 +92,7 @@ export async function GET(request: NextRequest) {
     const mappedOffers = (offers || []).map((offer: any) => ({
       job_id: offer.job[0].id,
       buyer_name: offer.buyer.name,
+      escrow_address: offer.escrow_address,
       status: offer.job[0].status,
       created_at: offer.job[0].created_at,
       currency: offer.currency,

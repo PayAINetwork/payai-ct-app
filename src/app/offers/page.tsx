@@ -9,6 +9,7 @@ import OfferCard from "@/components/offers/OfferCard";
 interface Offer {
   job_id?: number | string;
   buyer_name?: string;
+  escrow_address: string;
   currency?: string;
   amount?: number;
   description?: string;

@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 interface OfferCardProps {
   offer: {
     job_id?: number | string;
     buyer_name?: string;
+    escrow_address: string;
     currency?: string;
     amount?: number;
     description?: string;
@@ -31,7 +33,14 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, loading = false }) => {
             <span className="text-sm text-muted-foreground">Job ID: {offer.job_id}</span>
           </div>
           <div className="ml-auto">
-            <span className="px-2 py-1 rounded bg-gray-200 text-xs font-medium">
+            <span className={`px-2 py-1 rounded text-xs font-medium ${
+              offer.status === 'created' ? 'bg-blue-100 text-blue-800' :
+              offer.status === 'started' ? 'bg-yellow-100 text-yellow-800' :
+              offer.status === 'funded' ? 'bg-green-100 text-green-800' :
+              offer.status === 'completed' ? 'bg-purple-100 text-purple-800' :
+              offer.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
               {offer.status}
             </span>
           </div>
@@ -44,6 +53,18 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, loading = false }) => {
           <div className="text-xs text-gray-400 mt-2">
             Created: {offer.created_at ? new Date(offer.created_at).toLocaleString() : ''}
           </div>
+          {offer.status && offer.status !== 'started' && (
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open(offer.escrow_address, '_blank')}
+                className="w-full"
+              >
+                View Escrow Listing
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
       {loading && (
