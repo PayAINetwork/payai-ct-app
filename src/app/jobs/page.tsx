@@ -6,8 +6,8 @@ import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Jobs from '@/components/jobs/Jobs';
-import { JobFilters, JobFilters as JobFiltersType } from '@/components/jobs/JobFilter/JobFilters';
-import { filterJobs } from '@/components/jobs/JobFilter/jobFilterUtils';
+import { JobFilters, JobFilters as JobFiltersType } from '@/components/jobs/filter/JobFilters';
+import { filterJobs } from '@/components/jobs/filter/jobFilterUtils';
 import { CreateJobForm } from '@/components/jobs/CreateJobForm';
 
 export default function JobsPage() {
