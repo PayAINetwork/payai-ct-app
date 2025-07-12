@@ -118,7 +118,7 @@ export default function OffersPage() {
             </div>
           ) : (
             !isLoading && <div className="text-gray-600 text-center">
-              {offers.length > 0 ? 'No offers match your filters.' : 'No offers found.'}
+              {offers.length > 0 ? 'No offers match your filters.' : "You don't have any offers yet."}
             </div>
           )}
 

@@ -90,15 +90,15 @@ export async function GET(request: NextRequest) {
 
     // Map offers to only include required fields
     const mappedOffers = (offers || []).map((offer: any) => ({
-      job_id: offer.job[0].id,
-      buyer_name: offer.buyer.name,
+      job_id: offer.job?.[0]?.id || null,
+      buyer_name: offer.buyer?.name || 'Unknown Buyer',
       escrow_address: offer.escrow_address,
-      status: offer.job[0].status,
-      created_at: offer.job[0].created_at,
+      status: offer.job?.[0]?.status || 'unknown',
+      created_at: offer.job?.[0]?.created_at || null,
       currency: offer.currency,
       amount: offer.amount,
       description: offer.description,
-    }));
+    })).filter(offer => offer.job_id !== null); // Filter out offers without valid job data
 
     // Return paginated response
     return NextResponse.json({
