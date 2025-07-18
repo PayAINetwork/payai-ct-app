@@ -18,27 +18,36 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const query = Object.fromEntries(searchParams.entries());
+    const showAll = searchParams.get('show_all') === 'true';
     
     // Validate query parameters
     const validatedQuery = querySchema.parse(query);
     
     // Create Supabase client
     const supabase = await createServerSupabaseClient();
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     
     // Build the query
     let queryBuilder = supabase
       .from('offers')
       .select(`
-        *,
-        seller:agents!offers_seller_id_fkey (
-          id
-        ),
-        buyer:users!offers_buyer_id_fkey (
-          id
-        ),
+        buyer_id,
+        escrow_address,
+        currency,
+        amount,
+        description,
         job:jobs!jobs_offer_id_fkey (
           id,
-          status
+          status,
+          created_at
+        ),
+        buyer:users!offers_buyer_id_fkey (
+          name
         )
       `, { count: 'exact' });
 
@@ -53,6 +62,11 @@ export async function GET(request: NextRequest) {
       queryBuilder = queryBuilder.eq('buyer_id', validatedQuery.buyer_id);
     }
 
+    // If not showAll, filter to offers where user is seller or buyer
+    if (!showAll) {
+      queryBuilder = queryBuilder.or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`);
+    }
+
     // Apply sorting
     queryBuilder = queryBuilder.order(validatedQuery.sort_by, {
       ascending: validatedQuery.sort_order === 'asc'
@@ -65,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     // Execute query
     const { data: offers, error, count } = await queryBuilder;
-
+    
     if (error) {
       console.error('Error fetching offers:', error);
       return NextResponse.json(
@@ -74,9 +88,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Map offers to only include required fields
+    const mappedOffers = (offers || []).map((offer: any) => ({
+      job_id: offer.job?.[0]?.id || null,
+      buyer_name: offer.buyer?.name || 'Unknown Buyer',
+      escrow_address: offer.escrow_address,
+      status: offer.job?.[0]?.status || 'unknown',
+      created_at: offer.job?.[0]?.created_at || null,
+      currency: offer.currency,
+      amount: offer.amount,
+      description: offer.description,
+    })).filter(offer => offer.job_id !== null);
+
     // Return paginated response
     return NextResponse.json({
-      offers,
+      offers: mappedOffers,
       pagination: {
         total: count || 0,
         page: validatedQuery.page,

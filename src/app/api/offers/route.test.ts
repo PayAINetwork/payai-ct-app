@@ -189,4 +189,31 @@ describe('GET /api/offers', () => {
     expect(response.status).toBe(200);
     expect(data.offers[0].amount).toBeGreaterThan(data.offers[1].amount);
   });
+
+  it('should return an empty array when no offers are found', async () => {
+    // Mock Supabase response for no offers
+    const mockQueryBuilder = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      range: jest.fn().mockReturnThis(),
+      data: jest.fn().mockReturnThis(),
+      error: jest.fn().mockReturnThis(),
+      count: jest.fn().mockReturnThis(),
+      single: jest.fn().mockReturnThis(),
+      then: jest.fn().mockImplementation((callback: unknown) => {
+        return Promise.resolve((callback as (arg: any) => any)({ data: [], error: null, count: 0 }));
+      }),
+    };
+    mockSupabase.from.mockReturnValue(mockQueryBuilder);
+
+    const request = new NextRequest(`${API_URL}/api/offers?status=nonexistent`);
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.offers).toEqual([]);
+    expect(data.pagination.total).toBe(0);
+    expect(data.pagination.total_pages).toBe(0);
+  });
 }); 
