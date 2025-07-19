@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const query = Object.fromEntries(searchParams.entries());
-    const showAll = searchParams.get('show_all') === 'true';
     
     // Validate query parameters
     const validatedQuery = querySchema.parse(query);
@@ -62,10 +61,7 @@ export async function GET(request: NextRequest) {
       queryBuilder = queryBuilder.eq('buyer_id', validatedQuery.buyer_id);
     }
 
-    // If not showAll, filter to offers where user is seller or buyer
-    if (!showAll) {
-      queryBuilder = queryBuilder.or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`);
-    }
+    queryBuilder = queryBuilder.or(`seller_id.eq.${user.id}`);
 
     // Apply sorting
     queryBuilder = queryBuilder.order(validatedQuery.sort_by, {
