@@ -29,7 +29,7 @@ export async function PUT(
 
     // change environment variable name for this
     // 3. Agent token value validation
-    if (rawToken != process.env.NEXT_PUBLIC_VERIFICATION_AGENT){
+    if (rawToken != process.env.VERIFICATION_AGENT){
         return NextResponse.json({ error: 'Incorrect api token.'}, {status: 401})
     }
     
