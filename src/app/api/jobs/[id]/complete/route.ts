@@ -27,10 +27,9 @@ export async function PUT(
 
     const rawToken = authHeader.split(' ')[1];
 
-
     // change environment variable name for this
     // 3. Agent token value validation
-    if (rawToken != process.env.NEXT_PUBLIC_VERIFICATION_AGENT){
+    if (rawToken != process.env.VERIFICATION_AGENT){
         return NextResponse.json({ error: 'Incorrect api token.'}, {status: 401})
     }
     
@@ -49,14 +48,14 @@ export async function PUT(
 
     // 5. Check job status and agent assignment
     if (job.status !== 'delivered') {
-      return NextResponse.json({ error: 'Job is not in delivered state yet.' }, { status: 400 });
+      return NextResponse.json({ error: 'Job is not in delivered state.' }, { status: 400 });
     }
 
     // 6. Update the job status to started
     const { data: updatedJob, error: updateError } = await supabase
       .from('jobs')
       .update({
-        status: 'delivered',
+        status: 'completed',
         started_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -69,7 +68,7 @@ export async function PUT(
 
     return NextResponse.json(updatedJob);
   } catch (error: any) {
-    console.error('Error in PUT /api/jobs/[id]/completed:', error);
+    console.error('Error in PUT /api/jobs/[id]/complete:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid job ID' }, { status: 400 });
     }
