@@ -59,29 +59,6 @@ export async function PUT() {
       return NextResponse.json({ error: updateError.message || 'Failed to update profile' }, { status: 500 });
     }
 
-    // --- Agent linking logic ---
-    try {
-      // 1. Check for agent with matching handle
-      const { data: agent, error: agentError } = await supabase
-        .from('agents')
-        .select('*')
-        .eq('handle', twitterHandle)
-        .single();
-
-      if (!agentError && agent && agent.user_id !== user.id) {
-        // 2. Update agent's user_id if not already set
-        const { error: agentUpdateError } = await supabase
-          .from('agents')
-          .update({ user_id: user.id })
-          .eq('id', agent.id);
-        if (agentUpdateError) {
-          console.error('Error updating agent user_id:', agentUpdateError);
-        }
-      }
-    } catch (err) {
-      console.error('Error linking agent to user:', err);
-    }
-
     return NextResponse.json({
       displayName: userData.name,
       avatarUrl: userData.profileImage,
