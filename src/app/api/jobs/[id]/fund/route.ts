@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { hashToken } from '@/lib/auth';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
 
 // Validate job id param
