@@ -20,11 +20,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
 
       if (error) {
         console.error('Error signing in with Twitter:', error.message);
-        // TODO: Add proper error handling UI
       }
+
+      // Link agent to user
+      
     } catch (error) {
       console.error('Error during Twitter sign in:', error);
-      // TODO: Add proper error handling UI
     }
   };
 
