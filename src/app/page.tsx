@@ -116,9 +116,7 @@ export default function PaymentLinkPage() {
             
             <div className="flex items-center gap-3">
               <a 
-                href={`https://x.com/${agent?.handle}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/agents/${agent?.handle}`}
                 className="hover:opacity-80 transition-opacity"
               >
                 <Avatar>
@@ -127,7 +125,12 @@ export default function PaymentLinkPage() {
                 </Avatar>
               </a>
               <div className="flex flex-col">
-                <span className="font-medium">{agent?.name || 'Agent'}</span>
+                <a 
+                  href={`/agents/${agent?.handle}`}
+                  className="font-medium hover:underline"
+                >
+                  {agent?.name || 'Agent'}
+                </a>
                 <span className="text-sm text-muted-foreground">@{agent?.handle}</span>
               </div>
             </div>
