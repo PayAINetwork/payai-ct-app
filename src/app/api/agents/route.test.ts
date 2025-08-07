@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { GET, POST } from './route';
+import { GET } from './route';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getTwitterUserByHandle } from '@/lib/twitter';
 import { NextRequest } from 'next/server';
