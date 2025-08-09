@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { z } from 'zod';
-import { getTwitterUserByHandle } from '@/lib/twitter';
+// import { z } from 'zod';
+// import { getTwitterUserByHandle } from '@/lib/twitter';
 
 // Schema for agent creation
-const createAgentSchema = z.object({
-  handle: z.string().min(1).max(50), // Only require handle, we'll fetch the rest from Twitter
-});
+// const createAgentSchema = z.object({
+//   handle: z.string().min(1).max(50), // Only require handle, we'll fetch the rest from Twitter
+// });
 
 // List all agents
 export async function GET(request: Request) {

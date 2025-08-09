@@ -1,7 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { GET } from './route';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { getTwitterUserByHandle } from '@/lib/twitter';
+// import { getTwitterUserByHandle } from '@/lib/twitter';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
@@ -9,9 +9,9 @@ jest.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: jest.fn(),
 }));
 
-jest.mock('@/lib/twitter', () => ({
-  getTwitterUserByHandle: jest.fn(),
-}));
+// jest.mock('@/lib/twitter', () => ({
+//   getTwitterUserByHandle: jest.fn(),
+// }));
 
 describe('GET /api/agents', () => {
   const mockAgents = [
