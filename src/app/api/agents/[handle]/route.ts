@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
+function normalizeHandle(rawHandle: string): string {
+  return rawHandle.replace(/^@+/, '');
+}
+
 // Schema for agent updates
 const updateAgentSchema = z.object({
   name: z.string().min(1).max(50).optional(),
@@ -20,12 +24,13 @@ export async function GET(
   try {
     const supabase = await createServerSupabaseClient();
     
-    const { handle } = await context.params;
+    const { handle: rawHandle } = await context.params;
+    const handle = normalizeHandle(rawHandle);
 
     const { data: agent, error } = await supabase
       .from('agents')
       .select('*')
-      .eq('handle', handle)
+      .ilike('handle', handle)
       .single();
       
     if (error) {
@@ -61,7 +66,8 @@ export async function PATCH(
   try {
     const supabase = await createServerSupabaseClient();
 
-    const { handle } = await context.params;
+    const { handle: rawHandle } = await context.params;
+    const handle = normalizeHandle(rawHandle);
 
     // Validate request body
     const body = await request.json();
@@ -86,7 +92,7 @@ export async function PATCH(
     const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('*')
-      .eq('handle', handle)
+      .ilike('handle', handle)
       .single();
 
     if (agentError) {
@@ -117,7 +123,7 @@ export async function PATCH(
       const { data: twitterData, error: twitterError } = await supabase
         .from('agents')
         .select('twitter_handle')
-        .eq('handle', handle)
+        .ilike('handle', handle)
         .single();
 
       if (twitterError) {
@@ -165,7 +171,7 @@ export async function PATCH(
         ...body,
         updated_at: new Date().toISOString(),
       })
-      .eq('handle', handle)
+      .eq('id', agent.id)
       .select()
       .single();
 
@@ -195,7 +201,8 @@ export async function DELETE(
   try {
     const supabase = await createServerSupabaseClient();
     
-    const { handle } = await context.params;
+    const { handle: rawHandle } = await context.params;
+    const handle = normalizeHandle(rawHandle);
 
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -209,8 +216,8 @@ export async function DELETE(
     // Verify the agent exists and belongs to the user
     const { data: existingAgent, error: fetchError } = await supabase
       .from('agents')
-      .select('created_by')
-      .eq('handle', handle)
+      .select('id, created_by')
+      .ilike('handle', handle)
       .single();
       
     if (fetchError) {
@@ -239,7 +246,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('agents')
       .delete()
-      .eq('handle', handle);
+      .eq('id', existingAgent.id);
       
     if (deleteError) {
       console.error('Error deleting agent:', deleteError);

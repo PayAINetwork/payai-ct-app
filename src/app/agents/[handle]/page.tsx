@@ -29,6 +29,7 @@ interface Agent {
   twitter_user_id?: string;
   created_at: string;
   updated_at: string;
+  verification_date?: string | null;
 }
 
 interface Job {
@@ -344,12 +345,14 @@ export default function AgentDetailsPage() {
                   <p className="text-gray-600 whitespace-pre-wrap">{agent.bio}</p>
                 )}
                 
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4" />
-                    <span>Joined {formatDate(agent.created_at)}</span>
+                {agent.verification_date && (
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>Joined {formatDate(agent.verification_date)}</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -364,7 +367,7 @@ export default function AgentDetailsPage() {
               <span>Jobs</span>
               {pagination && (
                 <span className="text-sm font-normal text-gray-500">
-                  {pagination.total} total jobs
+                  {pagination.total} {pagination.total === 1 ? 'job' : 'total jobs'}
                 </span>
               )}
             </CardTitle>
