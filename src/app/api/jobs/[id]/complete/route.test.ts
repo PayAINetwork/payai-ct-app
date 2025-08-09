@@ -1,11 +1,15 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { PUT } from './route';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserOrError } from '@/lib/auth';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
 jest.mock('@/lib/supabase/server', () => ({
   createServiceRoleSupabaseClient: jest.fn(),
+}));
+jest.mock('@/lib/auth', () => ({
+  getAuthenticatedUserOrError: jest.fn(),
 }));
 
 describe('PUT /api/jobs/[id]/complete', () => {
@@ -30,8 +34,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (createServiceRoleSupabaseClient as any).mockReturnValue(mockSupabase);
-    // Set up environment variable for testing
-    process.env.VERIFICATION_AGENT = 'valid_verification_token';
+    // Set up environment variable for testing (privileged user id)
+    process.env.VERIFICATION_AGENT = 'privileged-user-id';
   });
 
   it('should successfully complete a job', async () => {
@@ -49,12 +53,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
       update: jest.fn().mockReturnThis(),
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
@@ -63,31 +63,22 @@ describe('PUT /api/jobs/[id]/complete', () => {
     expect(data.status).toBe('completed');
   });
 
-  it('should return 401 for missing authorization header', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', {
-      method: 'PUT',
-    });
-
+  it('should return 401 when user is unauthenticated', async () => {
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: null, error: new Error('no') } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', { method: 'PUT' });
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
-
     expect(response.status).toBe(401);
-    expect(data.error).toBe('Missing or invalid authorization header');
+    expect(data.error).toBe('Unauthorized');
   });
 
-  it('should return 401 for invalid authorization header format', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'InvalidFormat valid_verification_token',
-      },
-    });
-
+  it('should return 403 when user is not privileged', async () => {
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'someone-else' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', { method: 'PUT' });
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Missing or invalid authorization header');
+    expect(response.status).toBe(403);
+    expect(data.error).toBe('Forbidden');
   });
 
   it('should return 401 for incorrect API token', async () => {
@@ -116,12 +107,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
       single: mockSingle,
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/999/complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/999/complete', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '999' }) });
     const data = await response.json();
@@ -143,12 +130,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
       single: mockSingle,
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
@@ -171,12 +154,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
       update: jest.fn().mockReturnThis(),
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
@@ -186,12 +165,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
   });
 
   it('should return 400 for invalid job ID', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs/invalid/complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/invalid/complete', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: 'invalid' }) });
     const data = await response.json();
@@ -201,12 +176,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
   });
 
   it('should return 400 for empty job ID', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs//complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs//complete', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '' }) });
     const data = await response.json();
@@ -242,16 +213,9 @@ describe('PUT /api/jobs/[id]/complete', () => {
 
   it('should handle unexpected errors gracefully', async () => {
     // Mock a scenario where Supabase throws an unexpected error
-    mockSupabase.from.mockImplementation(() => {
-      throw new Error('Unexpected database error');
-    });
-
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    mockSupabase.from.mockImplementation(() => { throw new Error('Unexpected database error'); });
+    ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/complete', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
@@ -278,12 +242,8 @@ describe('PUT /api/jobs/[id]/complete', () => {
         single: mockSingle,
       });
 
-      const request = new NextRequest(`http://localhost:3000/api/jobs/123/complete`, {
-        method: 'PUT',
-        headers: {
-          'authorization': 'Bearer valid_verification_token',
-        },
-      });
+      ;(getAuthenticatedUserOrError as unknown as jest.Mock).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+      const request = new NextRequest(`http://localhost:3000/api/jobs/123/complete`, { method: 'PUT' });
 
       const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
       const data = await response.json();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserOrError } from '@/lib/auth';
 
 // Validate job id param
 const paramsSchema = z.object({
@@ -18,24 +19,24 @@ export async function PUT(
     const params = await context.params;
     const { id } = paramsSchema.parse(params);
 
-    // 2. Extract and validate Bearer token
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Missing or invalid authorization header' }, { status: 401 });
+    // 2. Authenticate and authorize privileged user via middleware-injected user
+    const { user, error } = await getAuthenticatedUserOrError(request);
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const rawToken = authHeader.split(' ')[1];
-
-    // change environment variable name for this
-    // 3. Agent token value validation
-    if (rawToken != process.env.VERIFICATION_AGENT){
-        return NextResponse.json({ error: 'Incorrect api token.'}, {status: 401})
+    const privilegedUserId = process.env.VERIFICATION_AGENT;
+    if (!privilegedUserId) {
+      return NextResponse.json({ error: 'Verification agent not configured' }, { status: 500 });
+    }
+    if (user.id !== privilegedUserId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     
     // create supabase connection
     const supabase = createServiceRoleSupabaseClient();
     
-    // 4. Fetch the job
+    // 3. Fetch the job
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .select('*')
@@ -45,12 +46,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // 5. Check job status and agent assignment
+    // 4. Check job status
     if (job.status !== 'created') {
       return NextResponse.json({ error: 'Job is not in created state.' }, { status: 400 });
     }
 
-    // 6. Update the job status to started
+    // 5. Update the job status to funded
     const { data: updatedJob, error: updateError } = await supabase
       .from('jobs')
       .update({

@@ -1,12 +1,18 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { PUT } from './route';
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
+import * as auth from '@/lib/auth';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
 jest.mock('@/lib/supabase/server', () => ({
   createServiceRoleSupabaseClient: jest.fn(),
 }));
+jest.mock('@/lib/auth', () => ({
+  getAuthenticatedUserOrError: jest.fn(),
+}));
+
+const mockedGetAuthenticatedUserOrError = auth.getAuthenticatedUserOrError as unknown as jest.Mock;
 
 describe('PUT /api/jobs/[id]/fund', () => {
   const mockJob = {
@@ -30,17 +36,18 @@ describe('PUT /api/jobs/[id]/fund', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (createServiceRoleSupabaseClient as any).mockReturnValue(mockSupabase);
-    // Set up environment variable for testing
-    process.env.VERIFICATION_AGENT = 'valid_verification_token';
+    // Set up environment variable for testing (privileged user id)
+    process.env.VERIFICATION_AGENT = 'privileged-user-id';
   });
 
   it('should successfully fund a job', async () => {
     // Mock Supabase responses
-    const mockSelect = jest.fn().mockReturnThis();
-    const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest.fn()
-      .mockResolvedValueOnce({ data: mockJob, error: null }) // job lookup
-      .mockResolvedValueOnce({ data: { ...mockJob, status: 'funded' }, error: null }); // job update
+    const mockSelect = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockEq = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockSingle = jest.fn() as unknown as jest.Mock;
+    (mockSingle as any)
+      .mockResolvedValueOnce({ data: mockJob, error: null } as any) // job lookup
+      .mockResolvedValueOnce({ data: { ...mockJob, status: 'funded' }, error: null } as any); // job update
 
     mockSupabase.from.mockReturnValue({
       select: mockSelect,
@@ -49,12 +56,9 @@ describe('PUT /api/jobs/[id]/fund', () => {
       update: jest.fn().mockReturnThis(),
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
@@ -63,52 +67,30 @@ describe('PUT /api/jobs/[id]/fund', () => {
     expect(data.status).toBe('funded');
   });
 
-  it('should return 401 for missing authorization header', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', {
-      method: 'PUT',
-    });
-
+  it('should return 401 when user is unauthenticated', async () => {
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: null, error: new Error('no') } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', { method: 'PUT' });
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
-
     expect(response.status).toBe(401);
-    expect(data.error).toBe('Missing or invalid authorization header');
+    expect(data.error).toBe('Unauthorized');
   });
 
-  it('should return 401 for invalid authorization header format', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'InvalidFormat valid_verification_token',
-      },
-    });
-
+  it('should return 403 when user is not privileged', async () => {
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'someone-else' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', { method: 'PUT' });
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Missing or invalid authorization header');
+    expect(response.status).toBe(403);
+    expect(data.error).toBe('Forbidden');
   });
 
-  it('should return 401 for incorrect API token', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer incorrect_token',
-      },
-    });
-
-    const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
-    const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Incorrect api token.');
-  });
+  // incorrect token test removed due to middleware+helper flow
 
   it('should return 404 when job not found', async () => {
-    const mockSelect = jest.fn().mockReturnThis();
-    const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: new Error('Job not found') });
+    const mockSelect = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockEq = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: new Error('Job not found') } as any) as unknown as jest.Mock;
 
     mockSupabase.from.mockReturnValue({
       select: mockSelect,
@@ -116,12 +98,8 @@ describe('PUT /api/jobs/[id]/fund', () => {
       single: mockSingle,
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/999/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/999/fund', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '999' }) });
     const data = await response.json();
@@ -133,9 +111,9 @@ describe('PUT /api/jobs/[id]/fund', () => {
   it('should return 400 when job is not in created state', async () => {
     const jobNotCreated = { ...mockJob, status: 'funded' };
 
-    const mockSelect = jest.fn().mockReturnThis();
-    const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest.fn().mockResolvedValue({ data: jobNotCreated, error: null });
+    const mockSelect = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockEq = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockSingle = jest.fn().mockResolvedValue({ data: jobNotCreated, error: null } as any) as unknown as jest.Mock;
 
     mockSupabase.from.mockReturnValue({
       select: mockSelect,
@@ -143,12 +121,8 @@ describe('PUT /api/jobs/[id]/fund', () => {
       single: mockSingle,
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
@@ -158,11 +132,12 @@ describe('PUT /api/jobs/[id]/fund', () => {
   });
 
   it('should return 500 when job update fails', async () => {
-    const mockSelect = jest.fn().mockReturnThis();
-    const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest.fn()
-      .mockResolvedValueOnce({ data: mockJob, error: null }) // job lookup
-      .mockResolvedValueOnce({ data: null, error: new Error('Update failed') }); // job update
+    const mockSelect = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockEq = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockSingle = jest.fn() as unknown as jest.Mock;
+    (mockSingle as any)
+      .mockResolvedValueOnce({ data: mockJob, error: null } as any) // job lookup
+      .mockResolvedValueOnce({ data: null, error: new Error('Update failed') } as any); // job update
 
     mockSupabase.from.mockReturnValue({
       select: mockSelect,
@@ -171,12 +146,8 @@ describe('PUT /api/jobs/[id]/fund', () => {
       update: jest.fn().mockReturnThis(),
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
@@ -186,12 +157,8 @@ describe('PUT /api/jobs/[id]/fund', () => {
   });
 
   it('should return 400 for invalid job ID', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs/invalid/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/invalid/fund', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: 'invalid' }) });
     const data = await response.json();
@@ -201,12 +168,8 @@ describe('PUT /api/jobs/[id]/fund', () => {
   });
 
   it('should return 400 for empty job ID', async () => {
-    const request = new NextRequest('http://localhost:3000/api/jobs//fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs//fund', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '' }) });
     const data = await response.json();
@@ -216,9 +179,9 @@ describe('PUT /api/jobs/[id]/fund', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    const mockSelect = jest.fn().mockReturnThis();
-    const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: new Error('Database error') });
+    const mockSelect = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockEq = jest.fn().mockReturnThis() as unknown as jest.Mock;
+    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: new Error('Database error') } as any) as unknown as jest.Mock;
 
     mockSupabase.from.mockReturnValue({
       select: mockSelect,
@@ -226,12 +189,8 @@ describe('PUT /api/jobs/[id]/fund', () => {
       single: mockSingle,
     });
 
-    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', {
-      method: 'PUT',
-      headers: {
-        'authorization': 'Bearer valid_verification_token',
-      },
-    });
+    (mockedGetAuthenticatedUserOrError as any).mockResolvedValue({ user: { id: 'privileged-user-id' } as any, error: null } as any);
+    const request = new NextRequest('http://localhost:3000/api/jobs/123/fund', { method: 'PUT' });
 
     const response = await PUT(request, { params: Promise.resolve({ id: '123' }) });
     const data = await response.json();
