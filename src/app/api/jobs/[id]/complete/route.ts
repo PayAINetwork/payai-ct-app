@@ -50,6 +50,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Job is not in delivered state.' }, { status: 400 });
     }
 
+    //TODO: check work and release funds
+    
     // 5. Update the job status to completed
     const { data: updatedJob, error: updateError } = await supabase
       .from('jobs')

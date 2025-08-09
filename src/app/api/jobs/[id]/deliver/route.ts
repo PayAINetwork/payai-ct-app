@@ -19,6 +19,8 @@ export async function PUT(
     const params = await context.params;
     const { id } = paramsSchema.parse(params);
 
+    // TODO: accept a url for the delivered work
+
     // 2. Get authenticated user via middleware or Supabase session
     const { user, error } = await getAuthenticatedUserOrError(request);
     if (error || !user) {
@@ -71,6 +73,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update job status' }, { status: 500 });
     }
 
+    //TODO: set the url of the delivered work
+    
     return NextResponse.json(updatedJob);
   } catch (error: any) {
     console.error('Error in PUT /api/jobs/[id]/deliver:', error);
