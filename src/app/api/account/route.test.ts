@@ -117,7 +117,6 @@ describe('PUT /api/account', () => {
     
     const req = new NextRequest('http://localhost/api/account', { method: 'PUT' });
     const response = await PUT(req);
-    const data = await response.json();
     
     expect(response.status).toBe(200);
     expect(getTwitterUserById).toHaveBeenCalledWith('987654321');
