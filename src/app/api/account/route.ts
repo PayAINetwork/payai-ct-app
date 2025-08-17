@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getTwitterUserById } from '@/lib/twitter';
+import { getAuthenticatedUserOrError } from '@/lib/auth';
 
-export async function PUT() {
+export async function PUT(request: Request) {
   try {
-    const supabase = await createServerSupabaseClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) {
+    // Get the authenticated user or return 401
+    const { user, error } = await getAuthenticatedUserOrError(request);
+    if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get the user's Twitter ID from their auth metadata
-    const twitterUserId = user.user_metadata.twitterUserId;
+    // Try both sub and provider_id as Twitter OAuth might use either
+    const twitterUserId = user.user_metadata.provider_id;
 
     if (!twitterUserId) {
       return NextResponse.json({ 
@@ -44,6 +45,7 @@ export async function PUT() {
     }
 
     // Update user metadata with real Twitter data
+    const supabase = await createServerSupabaseClient();
     const { error: updateError } = await supabase.auth.updateUser({
       data: {
         name: userData.name,

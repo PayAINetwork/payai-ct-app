@@ -1,5 +1,7 @@
+import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { getTwitterUserByHandle } from '@/lib/twitter';
+import { getTwitterUserById } from '@/lib/twitter';
+import { getAuthenticatedUserOrError } from '@/lib/auth';
 import { PUT } from './route';
 
 jest.mock('@/lib/supabase/server', () => ({
@@ -7,7 +9,11 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 jest.mock('@/lib/twitter', () => ({
-  getTwitterUserByHandle: jest.fn(),
+  getTwitterUserById: jest.fn(),
+}));
+
+jest.mock('@/lib/auth', () => ({
+  getAuthenticatedUserOrError: jest.fn(),
 }));
 
 describe('PUT /api/account', () => {
@@ -15,7 +21,7 @@ describe('PUT /api/account', () => {
     id: 'user-123',
     email: 'test@example.com',
     user_metadata: {
-      user_name: 'mockuser',
+      sub: '123456789', // Twitter ID from OAuth
     },
   };
 
@@ -32,7 +38,6 @@ describe('PUT /api/account', () => {
     jest.clearAllMocks();
     mockSupabase = {
       auth: {
-        getUser: jest.fn().mockResolvedValue({ data: { user: mockUser }, error: null }),
         updateUser: jest.fn().mockResolvedValue({ error: null }),
       },
       from: jest.fn().mockReturnThis(),
@@ -40,11 +45,13 @@ describe('PUT /api/account', () => {
       eq: jest.fn().mockReturnThis(),
     };
     (createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase);
-    (getTwitterUserByHandle as jest.Mock).mockResolvedValue(mockTwitterData);
+    (getTwitterUserById as jest.Mock).mockResolvedValue(mockTwitterData);
+    (getAuthenticatedUserOrError as jest.Mock).mockResolvedValue({ user: mockUser, error: null });
   });
 
   it('should update user metadata with current Twitter data and return the updated profile', async () => {
-    const response = await PUT();
+    const req = new NextRequest('http://localhost/api/account', { method: 'PUT' });
+    const response = await PUT(req);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -55,13 +62,14 @@ describe('PUT /api/account', () => {
       twitterUserId: mockTwitterData.twitterUserId,
       email: mockUser.email,
     });
+    expect(getAuthenticatedUserOrError).toHaveBeenCalledWith(req);
     expect(mockSupabase.auth.updateUser).toHaveBeenCalledWith({
       data: expect.objectContaining({
         name: mockTwitterData.name,
         avatar_url: mockTwitterData.profileImage,
         bio: mockTwitterData.bio,
         twitterUserId: mockTwitterData.twitterUserId,
-        twitter_handle: mockUser.user_metadata.user_name,
+        twitter_handle: mockTwitterData.twitterUserId,
       }),
     });
     expect(mockSupabase.from).toHaveBeenCalledWith('users');
@@ -71,28 +79,54 @@ describe('PUT /api/account', () => {
       updated_at: expect.any(String),
     });
     expect(mockSupabase.eq).toHaveBeenCalledWith('id', mockUser.id);
-    expect(getTwitterUserByHandle).toHaveBeenCalledWith(mockUser.user_metadata.user_name);
+    expect(getTwitterUserById).toHaveBeenCalledWith(mockUser.user_metadata.sub);
   });
 
   it('should return 401 if user is not authenticated', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: 'Unauthorized' });
-    const response = await PUT();
+    (getAuthenticatedUserOrError as jest.Mock).mockResolvedValue({ user: null, error: 'Unauthorized' });
+    const req = new NextRequest('http://localhost/api/account', { method: 'PUT' });
+    const response = await PUT(req);
     const data = await response.json();
     expect(response.status).toBe(401);
     expect(data.error).toBe('Unauthorized');
   });
 
-  it('should return 400 if twitter handle is missing', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { ...mockUser, user_metadata: {} } }, error: null });
-    const response = await PUT();
+  it('should return 400 if twitter user id is missing', async () => {
+    (getAuthenticatedUserOrError as jest.Mock).mockResolvedValue({ 
+      user: { ...mockUser, user_metadata: {} }, 
+      error: null 
+    });
+    const req = new NextRequest('http://localhost/api/account', { method: 'PUT' });
+    const response = await PUT(req);
     const data = await response.json();
     expect(response.status).toBe(400);
-    expect(data.error).toMatch(/Twitter handle not found/);
+    expect(data.error).toMatch(/Twitter ID not found/);
+  });
+
+  it('should use provider_id if sub is not available', async () => {
+    const mockUserWithProviderId = {
+      ...mockUser,
+      user_metadata: {
+        provider_id: '987654321',
+      },
+    };
+    (getAuthenticatedUserOrError as jest.Mock).mockResolvedValue({ 
+      user: mockUserWithProviderId, 
+      error: null 
+    });
+    
+    const req = new NextRequest('http://localhost/api/account', { method: 'PUT' });
+    const response = await PUT(req);
+    const data = await response.json();
+    
+    expect(response.status).toBe(200);
+    expect(getTwitterUserById).toHaveBeenCalledWith('987654321');
   });
 
   it('should handle Twitter API errors gracefully', async () => {
-    (getTwitterUserByHandle as jest.Mock).mockRejectedValue(new Error('Twitter user not found'));
-    const response = await PUT();
+    (getTwitterUserById as jest.Mock).mockRejectedValue(new Error('Twitter user not found'));
+    const req = new NextRequest('http://localhost/api/account', { method: 'PUT' });
+    const response = await PUT(req);
     const data = await response.json();
     expect(response.status).toBe(404);
     expect(data.error).toMatch(/Twitter user not found/);
@@ -107,7 +141,8 @@ describe('PUT /api/account', () => {
       })
     });
     
-    const response = await PUT();
+    const req = new NextRequest('http://localhost/api/account', { method: 'PUT' });
+    const response = await PUT(req);
     const data = await response.json();
     
     // Should still succeed even if public table update fails
