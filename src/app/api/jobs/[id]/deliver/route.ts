@@ -19,9 +19,18 @@ export async function PUT(
     const params = await context.params;
     const { id } = paramsSchema.parse(params);
 
-    // TODO: accept a url for the delivered work
+    // 2. Parse the request body to get the delivered_url
+    const body = await request.json();
+    const { delivered_url } = body;
 
-    // 2. Get authenticated user via middleware or Supabase session
+    if (!delivered_url) {
+      return NextResponse.json(
+        { error: 'delivered_url is required' },
+        { status: 400 }
+      );
+    }
+
+    // 3. Get authenticated user via middleware or Supabase session
     const { user, error } = await getAuthenticatedUserOrError(request);
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -58,12 +67,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Agent is not assigned to this job' }, { status: 403 });
     }
 
-    // 6. Update the job status to delivered
+    // 7. Update the job status to delivered and set the delivered_url
     const { data: updatedJob, error: updateError } = await supabase
       .from('jobs')
       .update({
         status: 'delivered',
-        started_at: new Date().toISOString(),
+        delivered_at: new Date().toISOString(),
+        delivered_url: delivered_url,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
@@ -72,10 +82,11 @@ export async function PUT(
     if (updateError || !updatedJob) {
       return NextResponse.json({ error: 'Failed to update job status' }, { status: 500 });
     }
-
-    //TODO: set the url of the delivered work
     
-    return NextResponse.json(updatedJob);
+    return NextResponse.json({
+      message: 'Job delivered successfully',
+      job: updatedJob,
+    });
   } catch (error: any) {
     console.error('Error in PUT /api/jobs/[id]/deliver:', error);
     if (error instanceof z.ZodError) {
