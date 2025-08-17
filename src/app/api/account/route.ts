@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { getTwitterUserByHandle } from '@/lib/twitter';
+import { getTwitterUserById } from '@/lib/twitter';
 
 export async function PUT() {
   try {
@@ -11,23 +11,23 @@ export async function PUT() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the user's Twitter handle from their auth metadata
-    const twitterHandle = user.user_metadata.user_name;
+    // Get the user's Twitter ID from their auth metadata
+    const twitterUserId = user.user_metadata.twitterUserId;
 
-    if (!twitterHandle) {
+    if (!twitterUserId) {
       return NextResponse.json({ 
-        error: 'Twitter handle not found. Please sign in with Twitter again.' 
+        error: 'Twitter ID not found. Please sign in with Twitter again.' 
       }, { status: 400 });
     }
 
-    // Use the shared Twitter API utility
+    // Use the shared Twitter API utility to get user data by ID
     let userData;
     try {
-      userData = await getTwitterUserByHandle(twitterHandle);
+      userData = await getTwitterUserById(twitterUserId);
     } catch (error: any) {
       if (error.message?.includes('not found')) {
         return NextResponse.json({ 
-          error: 'Twitter user not found. Please check your Twitter handle.' 
+          error: 'Twitter user not found. Please check your Twitter account.' 
         }, { status: 404 });
       }
       if (error.message?.includes('Unauthorized')) {
@@ -50,20 +50,36 @@ export async function PUT() {
         avatar_url: userData.profileImage,
         bio: userData.bio,
         twitterUserId: userData.twitterUserId,
-        twitter_handle: twitterHandle,
+        twitter_handle: userData.twitterUserId,
         last_synced: new Date().toISOString(),
       },
     });
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message || 'Failed to update profile' }, { status: 500 });
+      return NextResponse.json({ error: updateError.message || 'Failed to update auth profile' }, { status: 500 });
+    }
+
+    // Update the public.users table
+    const { error: publicUpdateError } = await supabase
+      .from('users')
+      .update({
+        name: userData.name,
+        avatar_url: userData.profileImage,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (publicUpdateError) {
+      console.error('Error updating public users table:', publicUpdateError);
+      // Don't fail the entire request if public table update fails
+      // The auth update was successful, so we can still return success
     }
 
     return NextResponse.json({
       displayName: userData.name,
       avatarUrl: userData.profileImage,
       bio: userData.bio,
-      twitterHandle: twitterHandle,
+      twitterUserId: userData.twitterUserId,
       email: user.email,
     });
   } catch (error: any) {
