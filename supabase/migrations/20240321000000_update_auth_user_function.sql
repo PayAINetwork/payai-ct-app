@@ -1,11 +1,5 @@
 -- Migration: Update handle_new_auth_user function to include agent verification
--- Date: 2024-03-21
-
--- Drop the existing trigger first
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
--- Drop the existing function
-DROP FUNCTION IF EXISTS public.handle_new_auth_user();
+-- Date: 2025-08-18
 
 -- Create the updated function with agent verification logic
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
@@ -28,7 +22,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Recreate the trigger
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_auth_user();
+
