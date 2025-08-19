@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     status job_status DEFAULT 'created',
     started_at TIMESTAMP WITH TIME ZONE,
     delivered_at TIMESTAMP WITH TIME ZONE,
+    delivered_url TEXT,
     completed_at TIMESTAMP WITH TIME ZONE,
     cancelled_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
