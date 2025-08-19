@@ -73,8 +73,9 @@ export async function PUT(request: Request) {
 
     if (publicUpdateError) {
       console.error('Error updating public users table:', publicUpdateError);
-      // Don't fail the entire request if public table update fails
-      // The auth update was successful, so we can still return success
+      return NextResponse.json({ 
+        error: 'Failed to update public profile. Please try again.' 
+      }, { status: 500 });
     }
 
     return NextResponse.json({

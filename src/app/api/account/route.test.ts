@@ -69,7 +69,7 @@ describe('PUT /api/account', () => {
         avatar_url: mockTwitterData.profileImage,
         bio: mockTwitterData.bio,
         twitterUserId: mockTwitterData.twitterUserId,
-        twitter_handle: mockTwitterData.twitterUserId,
+        twitter_handle: mockTwitterData.name,
       }),
     });
     expect(mockSupabase.from).toHaveBeenCalledWith('users');
@@ -131,11 +131,12 @@ describe('PUT /api/account', () => {
     expect(data.error).toMatch(/Twitter user not found/);
   });
 
-  it('should continue even if public users table update fails', async () => {
+  it('should return 500 if public users table update fails', async () => {
+    // Mock the public users table update to fail
     mockSupabase.from.mockReturnValue({
       update: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          error: new Error('Database error')
+          error: { message: 'Database error' }
         })
       })
     });
@@ -144,9 +145,9 @@ describe('PUT /api/account', () => {
     const response = await PUT(req);
     const data = await response.json();
     
-    // Should still succeed even if public table update fails
-    expect(response.status).toBe(200);
-    expect(data).toBeDefined();
+    // Should return 500 if public table update fails
+    expect(response.status).toBe(500);
+    expect(data.error).toMatch(/Failed to update public profile/);
   });
 });
 
