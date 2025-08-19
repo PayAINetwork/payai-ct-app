@@ -52,7 +52,7 @@ export async function PUT(request: Request) {
         avatar_url: userData.profileImage,
         bio: userData.bio,
         twitterUserId: userData.twitterUserId,
-        twitter_handle: userData.twitterUserId,
+        twitter_handle: userData.name,
         last_synced: new Date().toISOString(),
       },
     });
