@@ -29,8 +29,7 @@ describe('PUT /api/account', () => {
   name: 'Mock User',
   bio: 'Mock bio',
   profileImage: 'https://example.com/avatar.jpg',
-  twitterUserId: '123456789',
-  username: 'mockuser',
+  twitterHandle: 'mockuser',
 };
 
   let mockSupabase: any;
@@ -61,6 +60,7 @@ describe('PUT /api/account', () => {
       avatarUrl: mockTwitterData.profileImage,
       bio: mockTwitterData.bio,
       email: mockUser.email,
+      handle: mockTwitterData.twitterHandle,
     });
     expect(getAuthenticatedUserOrError).toHaveBeenCalledWith(req);
     expect(mockSupabase.auth.updateUser).toHaveBeenCalledWith({
@@ -74,6 +74,7 @@ describe('PUT /api/account', () => {
       name: mockTwitterData.name,
       avatar_url: mockTwitterData.profileImage,
       bio: mockTwitterData.bio,
+      handle: mockTwitterData.twitterHandle,
       updated_at: expect.any(String),
     });
     expect(mockSupabase.eq).toHaveBeenCalledWith('id', mockUser.id);
