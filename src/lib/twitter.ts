@@ -45,3 +45,27 @@ export async function getTwitterUserByHandle(handle: string): Promise<TwitterUse
     throw error;
   }
 } 
+
+export async function getTwitterUserById(twitterUserId: string): Promise<TwitterUserData> {
+  try {
+    // Get user by ID
+    const user = await twitterClient.v2.user(twitterUserId, {
+      'user.fields': ['name', 'description', 'profile_image_url', 'id'],
+    });
+    
+    if (!user.data) {
+      console.debug('Twitter user data not found. User:', user);
+      throw new Error('Twitter user data not found');
+    }
+    
+    return {
+      name: user.data.name,
+      bio: user.data.description || '',
+      profileImage: user.data.profile_image_url || '',
+      twitterUserId: user.data.id,
+    };
+  } catch (error) {
+    console.error('Error fetching Twitter user by ID:', error);
+    throw error;
+  }
+} 
