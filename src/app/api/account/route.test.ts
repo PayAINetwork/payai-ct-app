@@ -26,11 +26,12 @@ describe('PUT /api/account', () => {
   };
 
   const mockTwitterData = {
-    name: 'Mock User',
-    bio: 'Mock bio',
-    profileImage: 'https://example.com/avatar.jpg',
-    twitterUserId: '123456789',
-  };
+  name: 'Mock User',
+  bio: 'Mock bio',
+  profileImage: 'https://example.com/avatar.jpg',
+  twitterUserId: '123456789',
+  username: 'mockuser',
+};
 
   let mockSupabase: any;
 
@@ -59,7 +60,6 @@ describe('PUT /api/account', () => {
       displayName: mockTwitterData.name,
       avatarUrl: mockTwitterData.profileImage,
       bio: mockTwitterData.bio,
-      twitterUserId: mockTwitterData.twitterUserId,
       email: mockUser.email,
     });
     expect(getAuthenticatedUserOrError).toHaveBeenCalledWith(req);
@@ -67,15 +67,13 @@ describe('PUT /api/account', () => {
       data: expect.objectContaining({
         name: mockTwitterData.name,
         avatar_url: mockTwitterData.profileImage,
-        bio: mockTwitterData.bio,
-        twitterUserId: mockTwitterData.twitterUserId,
-        twitter_handle: mockTwitterData.name,
       }),
     });
     expect(mockSupabase.from).toHaveBeenCalledWith('users');
     expect(mockSupabase.update).toHaveBeenCalledWith({
       name: mockTwitterData.name,
       avatar_url: mockTwitterData.profileImage,
+      bio: mockTwitterData.bio,
       updated_at: expect.any(String),
     });
     expect(mockSupabase.eq).toHaveBeenCalledWith('id', mockUser.id);

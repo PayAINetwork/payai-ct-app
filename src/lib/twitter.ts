@@ -8,6 +8,7 @@ interface TwitterUserData {
   bio: string;
   profileImage: string;
   twitterUserId: string;
+  twitterHandle: string;
 }
 
 // Initialize Twitter client
@@ -39,6 +40,7 @@ export async function getTwitterUserByHandle(handle: string): Promise<TwitterUse
       bio: user.data.description || '',
       profileImage: user.data.profile_image_url || '',
       twitterUserId: user.data.id,
+      twitterHandle: cleanHandle,
     };
   } catch (error) {
     console.error('Error fetching Twitter user:', error);
@@ -50,7 +52,7 @@ export async function getTwitterUserById(twitterUserId: string): Promise<Twitter
   try {
     // Get user by ID
     const user = await twitterClient.v2.user(twitterUserId, {
-      'user.fields': ['name', 'description', 'profile_image_url', 'id'],
+      'user.fields': ['name', 'description', 'profile_image_url', 'id', 'username'],
     });
     
     if (!user.data) {
@@ -63,7 +65,9 @@ export async function getTwitterUserById(twitterUserId: string): Promise<Twitter
       bio: user.data.description || '',
       profileImage: user.data.profile_image_url || '',
       twitterUserId: user.data.id,
+      twitterHandle: user.data.username || '',
     };
+    
   } catch (error) {
     console.error('Error fetching Twitter user by ID:', error);
     throw error;
