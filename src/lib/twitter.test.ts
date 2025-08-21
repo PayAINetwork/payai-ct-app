@@ -41,6 +41,7 @@ describe('Twitter API', () => {
         bio: 'Test bio',
         profileImage: 'https://example.com/avatar.jpg',
         twitterUserId: '123456789',
+        twitterHandle: 'testuser',
       });
       expect(mockUserByUsername).toHaveBeenCalledWith('testuser', {
         'user.fields': ['name', 'description', 'profile_image_url', 'id'],

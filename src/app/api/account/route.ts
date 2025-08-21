@@ -13,7 +13,7 @@ export async function PUT(request: Request) {
 
     // Get the user's Twitter ID from their auth metadata
     // Try both sub and provider_id as Twitter OAuth might use either
-    const twitterUserId = user.user_metadata.provider_id;
+    const twitterUserId = user.user_metadata.provider_id || user.user_metadata.sub;
 
     if (!twitterUserId) {
       return NextResponse.json({ 
@@ -44,16 +44,12 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: error.message || 'Failed to fetch Twitter profile' }, { status: 500 });
     }
 
-    // Update user metadata with real Twitter data
+    // Update user metadata with only essential auth data
     const supabase = await createServerSupabaseClient();
     const { error: updateError } = await supabase.auth.updateUser({
       data: {
         name: userData.name,
         avatar_url: userData.profileImage,
-        bio: userData.bio,
-        twitterUserId: userData.twitterUserId,
-        twitter_handle: userData.name,
-        last_synced: new Date().toISOString(),
       },
     });
 
@@ -61,12 +57,14 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: updateError.message || 'Failed to update auth profile' }, { status: 500 });
     }
 
-    // Update the public.users table
+    // Update the public.users table with profile data
     const { error: publicUpdateError } = await supabase
       .from('users')
       .update({
         name: userData.name,
         avatar_url: userData.profileImage,
+        bio: userData.bio,
+        handle: userData.twitterHandle,
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
@@ -82,8 +80,8 @@ export async function PUT(request: Request) {
       displayName: userData.name,
       avatarUrl: userData.profileImage,
       bio: userData.bio,
-      twitterUserId: userData.twitterUserId,
       email: user.email,
+      handle: userData.twitterHandle,
     });
   } catch (error: any) {
     console.error('Error syncing profile with Twitter:', error);
